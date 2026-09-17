@@ -24,9 +24,6 @@
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     text-align: center;
     padding: 24px;
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
-    user-select: none;
   }
   .wrap {
     max-width: 420px;
@@ -41,17 +38,33 @@
     font-size: 0.95rem;
     margin: 0 0 20px;
   }
+  button {
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 16px 32px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  button:active {
+    filter: brightness(1.15);
+  }
   .status {
     margin-top: 16px;
     font-size: 0.85rem;
     color: #666;
+    min-height: 1.2em;
   }
 </style>
 </head>
 <body>
   <div class="wrap">
-    <h1> Well Well Well</h1>
-    <p>Tap anywhere on the screen.</p>
+    <h1>🔊 Well Well Well</h1>
+    <p>Tap the button to play the sound.</p>
+    <button id="playBtn">▶ Play sound</button>
     <div class="status" id="status"></div>
   </div>
 
@@ -62,31 +75,26 @@
 
   <script>
     const audio = document.getElementById('sound');
+    const btn = document.getElementById('playBtn');
     const status = document.getElementById('status');
-    let played = false;
 
-    function playSound() {
-      if (played) return;
+    // On iOS Safari, audio.play() must be called synchronously, directly
+    // inside a real user gesture handler (like "click") — not inside a
+    // setTimeout, and not inside a "touchstart" handler that later awaits
+    // something. A plain button click handler is the most reliable trigger.
+    btn.addEventListener('click', function () {
       audio.play()
-        .then(() => {
-          played = true;
+        .then(function () {
           status.textContent = 'Playing…';
         })
-        .catch(() => {
-          status.textContent = 'Tap anywhere to play.';
+        .catch(function (err) {
+          // Show the real reason so it's easy to diagnose if it still fails
+          status.textContent = 'Could not play: ' + err.message;
         });
-    }
-
-    // Try automatically after 2 seconds (works in some browsers, e.g. after
-    // any prior interaction with the site).
-    window.addEventListener('load', () => {
-      setTimeout(playSound, 2000);
     });
 
-    // Any tap, click, or key press anywhere on the page plays the sound.
-    // This is what makes it work reliably on iOS/Safari.
-    ['click', 'touchstart', 'keydown'].forEach(evt => {
-      document.addEventListener(evt, playSound, { once: false });
+    audio.addEventListener('error', function () {
+      status.textContent = 'Audio failed to load — check the file link.';
     });
   </script>
 </body>
