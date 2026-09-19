@@ -1,101 +1,2625 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Well Well Well</title>
-<style>
-  :root {
-    --bg: #0f0f12;
-    --fg: #f5f5f7;
-    --accent: #7c5cff;
-  }
-  * { box-sizing: border-box; }
-  html, body {
-    height: 100%;
-    margin: 0;
-  }
-  body {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--bg);
-    color: var(--fg);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    text-align: center;
-    padding: 24px;
-  }
-  .wrap {
-    max-width: 420px;
-  }
-  h1 {
-    font-size: 1.4rem;
-    font-weight: 600;
-    margin: 0 0 8px;
-  }
-  p {
-    color: #aaa;
-    font-size: 0.95rem;
-    margin: 0 0 20px;
-  }
-  button {
-    background: var(--accent);
-    color: white;
-    border: none;
-    border-radius: 12px;
-    padding: 16px 32px;
-    font-size: 1.1rem;
-    font-weight: 600;
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
-  }
-  button:active {
-    filter: brightness(1.15);
-  }
-  .status {
-    margin-top: 16px;
-    font-size: 0.85rem;
-    color: #666;
-    min-height: 1.2em;
-  }
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Big Jar</title>
+  <style>
+    :root { --game-width: 400px; --game-height: 600px; }
+    html,body {
+      height: 100%; margin: 0; background: #111; color: #fff;
+      font-family: Inter, Arial, Helvetica, sans-serif;
+      display: flex; align-items: center; justify-content: center;
+    }
+    /* ---------- Main menu ---------- */
+    #menu {
+      text-align: center; width: calc(var(--game-width) + 40px);
+    }
+    #menu h1 { font-size: 48px; margin: 18px 0 8px; letter-spacing: 1px; }
+    #menu .changelog { font-size: 14px; margin: 8px 0; color: #aaa; }
+    .menuButtons { display: flex; gap: 12px; justify-content: center; margin: 16px 0; flex-wrap: wrap; }
+    .menuBtn {
+      background: #fff; color: #111; border: none; padding: 12px 18px;
+      border-radius: 10px; font-weight: 800; cursor: pointer; min-width: 140px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+    }
+    .menuBtn.secondary { background: #f0f0f0; color: #333; }
+    .menuBtn.tertiary { background: #4a9eff; color: #fff; }
+    /* Ensure Escape (IGRY) button text is always black */
+    #playEscape { color: #000 !important; }
+    #globalBox {
+      margin-top: 14px; background: #1b1b1b; border: 1px solid #2a2a2a; border-radius: 10px;
+      padding: 12px 14px; text-align: left;
+    }
+    #dailyBox {
+      margin-top: 14px; background: #1b1b1b; border: 1px solid #2a2a2a; border-radius: 10px;
+      padding: 12px 14px; text-align: left;
+    }
+    #globalBox h2,
+    #dailyBox h2 { font-size: 16px; margin: 0 0 8px; color: #bbb; }
+    .modeReviveCount { margin-left: 4px; color: #267a3d; font-size: 11px; font-weight: 800; }
+    .modeBlock { margin: 8px 0; }
+    .modeLabel { color: #ddd; font-weight: 700; margin-bottom: 4px; }
+    .modeScore { color: #fff; font-weight: 800; }
+    .hint { color: #888; font-size: 12px; margin-top: 8px; }
+    
+    /* Daily Wheel */
+    #wheelButton {
+      background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; padding: 12px 18px;
+      border: 2px solid #FF8C00; border-radius: 10px; font-weight: 800; cursor: pointer;
+      box-shadow: 0 8px 24px rgba(255, 165, 0, 0.5); min-width: 140px;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    #wheelButton:hover:not(:disabled) { transform: scale(1.05); box-shadow: 0 12px 30px rgba(255, 165, 0, 0.7); }
+    #wheelButton:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    #musicCrateButton {
+      background: linear-gradient(135deg, #7a7cff, #4fd1ff); color: #fff; padding: 12px 18px;
+      border: 2px solid #4fd1ff; border-radius: 10px; font-weight: 800; cursor: pointer;
+      box-shadow: 0 8px 24px rgba(79, 209, 255, 0.45); min-width: 140px;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    #musicCrateButton:hover:not(:disabled) { transform: scale(1.05); box-shadow: 0 12px 30px rgba(79, 209, 255, 0.7); }
+    #musicCrateButton:disabled { opacity: 0.5; cursor: not-allowed; }
+    
+    #wheelModal {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.85); z-index: 2500; align-items: center; justify-content: center;
+      flex-direction: column;
+    }
+    
+    #wheelMessage {
+      color: #fff; font-size: 18px; font-weight: 700; text-align: center; margin-bottom: 20px;
+      min-height: 50px; display: flex; align-items: center; justify-content: center;
+    }
+    
+    #wheelResult {
+      color: #FFD700; font-size: 24px; font-weight: 800; text-align: center; margin-top: 16px;
+      min-height: 40px;
+    }
+    
+    #wheelCloseBtn {
+      background: #fff; color: #000; border: none; padding: 10px 20px; border-radius: 8px;
+      font-weight: 800; cursor: pointer; margin-top: 16px;
+    }
+
+    /* Luck Upgrades Modal */
+    #luckModal {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.85); z-index: 2500; align-items: center; justify-content: center;
+      flex-direction: column;
+    }
+
+    #luckModalContent {
+      background: #1b1b1b; border: 2px solid #FFD700; border-radius: 14px; padding: 24px;
+      max-width: 450px; box-shadow: 0 12px 40px rgba(0,0,0,0.8); text-align: center;
+    }
+
+    #luckModalContent h2 { margin-top: 0; color: #FFD700; font-size: 24px; }
+
+    #luckModalContent .modeLabel {
+      color: #ddd; font-weight: 700; margin: 16px 0 12px; font-size: 14px;
+    }
+
+    #luckUpgradeButtons {
+      display: flex; flex-direction: column; gap: 10px; margin: 16px 0;
+    }
+
+    .luckUpgradeBtn {
+      background: #4a9eff; color: #fff; border: none; padding: 12px 16px;
+      border-radius: 8px; font-weight: 800; cursor: pointer; width: 100%;
+      transition: all 0.2s;
+    }
+
+    .luckUpgradeBtn:hover:not(:disabled) {
+      background: #6ab3ff; transform: scale(1.02);
+    }
+
+    .luckUpgradeBtn:disabled {
+      background: #666; opacity: 0.6; cursor: not-allowed;
+    }
+
+    #luckModalContent .hint {
+      color: #888; font-size: 12px; margin-top: 12px;
+    }
+
+    #luckCloseBtn {
+      background: #fff; color: #000; border: none; padding: 10px 20px; border-radius: 8px;
+      font-weight: 800; cursor: pointer; margin-top: 16px;
+    }
+
+    /* ---------- Game container ---------- */
+    #gameWrapper {
+      display: none; position: relative; width: calc(var(--game-width) + 40px);
+    }
+
+    #gameArea {
+      position: relative; width: var(--game-width); height: var(--game-height);
+      background: linear-gradient(180deg,#3f3f3f,#2f2f2f);
+      border-radius: 12px; border: 4px solid #222; overflow: hidden;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.6); margin: 0 20px 18px 20px;
+    }
+
+    /* scoreboard */
+    #scoreboard {
+      position: absolute; top: 10px; left: 10px; background: #fff; color: #000;
+      padding: 8px 12px; border-radius: 10px; font-weight: 800; z-index: 300; min-width: 180px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+    }
+    #bestLabel { margin-top: 6px; font-size: 12px; color: #333; font-weight:700; }
+
+    /* breath bar (Guilo mode) */
+    #breathBarContainer {
+      display: none; position: absolute; bottom: 10px; left: 10px;
+      background: #fff; color: #000; padding: 8px 12px; border-radius: 10px;
+      font-weight: 800; z-index: 300; min-width: 200px; box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+    }
+    #breathBar {
+      width: 160px; height: 20px; background: #ddd; border-radius: 6px; margin-top: 6px;
+      overflow: hidden; position: relative;
+    }
+    #breathBarFill {
+      height: 100%; background: linear-gradient(90deg, #00aa00, #00ff00); width: 100%;
+      transition: width 0.1s ease-out;
+    }
+
+    /* overlay messages */
+    #overlay {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+      background: rgba(200,20,20,0.95); color: #fff; padding: 18px 22px; border-radius: 10px;
+      font-size: 18px; font-weight: 700; text-align: center; display: none; z-index: 500; white-space: pre-line;
+    }
+    #overlay button { margin-top: 12px; padding: 8px 12px; border-radius: 6px; border: none; background: #fff; color: #c00; font-weight:700; cursor:pointer; }
+
+    #coinNotification {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: rgba(0,0,0,0.85);
+      color: #ffd700;
+      border: 1px solid rgba(255,215,0,0.7);
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 14px;
+      font-weight: 700;
+      display: none;
+      z-index: 550;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+      pointer-events: none;
+    }
+
+    /* player */
+    #player {
+      position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%);
+      width: 50px; height: 50px; background-size: cover; background-position: center; z-index: 400;
+      pointer-events: none; border-radius: 6px; box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+      background-color: #ffd; border: 2px solid rgba(0,0,0,0.18);
+    }
+
+    /* objects */
+    .coin { position:absolute; width:30px; height:30px; border-radius:50%; background: radial-gradient(circle at 30% 30%, #fff7b2, gold 40%, #c79a00 100%); box-shadow:0 0 10px rgba(255,215,0,0.8); z-index:200; }
+    .enemy { position:absolute; width:60px; height:60px; border-radius:8px; background-image:url('https://c0.uidownload.com/pngpics/1125/180/adolf-hitler-silhouette-nazi-party-leader-illustration-monochrome-political-figure-black-and-white-historical-stencil-military-uniform-profile-world-war-ii-era-art-german-dictator.png'); background-size:cover; background-position:center; z-index:250; }
+    .bigEnemy { position:absolute; width:140px; height:140px; border-radius:12px; background-image:url('https://media1.tenor.com/m/qqIa_UTstrUAAAAC/alex-jones-infowars.gif'); background-size:cover; background-position:center; z-index:350; }
+    .multiplierCoin { position:absolute; width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,#8a2be2,#ff69b4); box-shadow:0 0 18px rgba(200,0,200,0.9); border:2px solid #fff; z-index:300; }
+    .x5Coin { position:absolute; width:48px; height:48px; border-radius:50%; background:radial-gradient(circle at 30% 30%, #fff9d6, #ffd700 40%, #b88600 100%); box-shadow:0 0 24px rgba(255,215,0,0.95); border:2px solid #fff; z-index:380; }
+
+    /* Snake mode */
+    #snakeBoard { display:none; position:absolute; inset:0; width:100%; height:100%; background:#16251d; z-index:100; image-rendering:auto; }
+    #snakeControls { display:none; position:fixed; left:50%; bottom:4%; transform:translateX(-50%); z-index:1100; grid-template-columns:repeat(3, 58px); grid-template-rows:52px; gap:6px; }
+    #snakeControlMode { display:none; position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:1201; padding:8px; border-radius:8px; font-weight:800; }
+    .snakeControl { border:1px solid #8ee6a3; border-radius:8px; background:#183b27; color:#fff; font-size:24px; font-weight:800; cursor:pointer; touch-action:manipulation; }
+    .snakeControl.up { grid-column:2; }
+    .snakeControl.left { grid-column:1; grid-row:2; }
+    .snakeControl.down { grid-column:2; grid-row:2; }
+    .snakeControl.right { grid-column:3; grid-row:2; }
+    .snakeMode #player { display:none !important; }
+    .snakeMode #scoreboard {
+      position:fixed;
+      top:12px;
+      left:12px;
+      z-index:1200;
+    }
+    .snakeMode #backToMenu {
+      position:fixed;
+      top:12px;
+      right:12px;
+      z-index:1200;
+    }
+    .snakeMode #controlsPanel {
+      display:none !important;
+    }
+    .snakeMode #mobileSliderWrap { display:none !important; }
+    .snakeMode #snakeControlMode { display:block; }
+    .snakeMode #gameArea { background:#16251d; }
+
+    @media (max-width:700px) {
+      .snakeMode #scoreboard { top:64px; left:10px; }
+      .snakeMode #backToMenu { top:64px; right:10px; }
+      .snakeMode #snakeControlMode { top:10px; }
+    }
+
+    /* controls panel (bottom-right) */
+    #controlsPanel {
+      position: absolute; right: 10px; bottom: 10px; z-index: 600;
+      display: flex; flex-direction: column; gap: 8px; align-items: flex-end;
+    }
+    #modeSelectWrap { background:#fff;color:#000;padding:6px 10px;border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.35); display:flex; gap:8px; align-items:center; }
+    #modeSelect { font-weight:800; padding:4px 6px; border-radius:6px; border:1px solid #ccc; background:#f3f3f3; cursor:pointer; }
+    #mobileSliderWrap { background:#fff;color:#000;padding:8px 10px;border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.35); display:none; width:220px; }
+    /* centered variant used when mobile control mode is active */
+    #mobileSliderWrap.centered {
+      position: fixed;
+      left: 50%;
+      bottom: 10%;
+      transform: translateX(-50%);
+      width: max-content;          /* box will size to content (the slider) */
+      padding: 6px 10px;          /* small padding around the slider */
+      display: flex !important;
+      flex-direction: column;
+      align-items: center;
+      z-index: 1100;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.35);
+      pointer-events: auto;
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    /* ensure the input has a consistent width when centered so the white box matches it */
+    #mobileSliderWrap.centered #mobileSlider {
+      width: 240px;
+      max-width: 86vw;
+    }
+
+    /* back to menu button */
+    #backToMenu {
+      position: absolute; top: 70px; right: 270px; z-index: 600;
+      background: #fff; color: #000; padding: 3px 10px; border-radius: 8px; font-weight: 800;
+      border: none; cursor: pointer; box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+    }
+
+    /* small responsive */
+    @media (max-width:480px) {
+      #gameWrapper { width: calc(100% - 20px); }
+      #gameArea { margin: 0 10px 18px 10px; }
+    }
+  </style>
 </head>
 <body>
-  <div class="wrap">
-    <h1> Well Well Well</h1>
-    <p>Tap the button to play the sound.</p>
-    <button id="playBtn">▶ Play sound</button>
-    <div class="status" id="status"></div>
+  <!-- Main Menu -->
+  <div id="menu">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+      <h1 style="margin: 0; flex: 1;">Big Jar</h1>
+      <div id="authContainer" style="display: flex; gap: 8px; align-items: center;">
+        <span id="coinsDisplay" style="color: #ffd700; font-weight: 700; font-size: 14px;"></span>
+        <span id="usernameDisplay" style="color: #4a9eff; font-weight: 700; font-size: 14px;"></span>
+        <button class="menuBtn tertiary" id="authBtn" style="min-width: 100px; padding: 10px 14px;">Sign In</button>
+      </div>
+    </div>
+    <p class="changelog">Changelogs: 2026-09-15 @4:34 PM: Revamped spin wheel luck values, fixed e & infinity levels, new BETA gamemode, "Eat Big Jar" </p>
+    <div class="menuButtons">
+      <button class="menuBtn" id="playOriginal">Play Original<small class="modeReviveCount" id="originalReviveButtonCount"></small></button>
+      <button class="menuBtn secondary" id="playEscape">IGRY Mode (No multipliers)<small class="modeReviveCount" id="escapeReviveButtonCount"></small></button>
+      <button class="menuBtn tertiary" id="playGuilo">Escape</button>
+      <button class="menuBtn" id="playSnake" style="background:#183b27;color:#9bffb2;">Eat Big Jar</button>
+    </div>
+
+    <!-- Global highscores (Firestore) -->
+    <div id="globalBox">
+      <h2>Global highscores</h2>
+      <div class="modeBlock">
+        <div class="modeLabel">Original</div>
+        <div class="modeScore" id="globalOriginal">Loading…</div>
+      </div> 
+      <div class="modeBlock">
+        <div class="modeLabel">IGRY Mode</div>
+        <div class="modeScore" id="globalEscape">Loading…</div>
+      </div>
+      <div class="modeBlock">
+        <div class="modeLabel">Escape the Gas Chambers</div>
+        <div class="modeScore" id="globalGuilo">Loading…</div>
+      </div>
+      <div class="modeBlock">
+        <div class="modeLabel">Eat Big Jar</div>
+        <div class="modeScore" id="globalSnake">Loading…</div>
+      </div>
+      <div class="hint">Scores are shared across all players.</div>
+    </div>
+
+    <div id="dailyBox">
+      <h2>Daily Original leaderboard</h2>
+      <div id="dailyOriginalList">Loading…</div>
+      <div class="hint">Daily Top 3 Score Leaderboard</div>
+    </div>
+
+    <div style="text-align: center; margin-top: 16px; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;">
+      <button id="wheelButton" style="display: none;">🎡 Spin Daily Wheel</button>
+      <button id="musicCrateButton" style="display: inline-block;">Settings</button>
+      <button id="luckButton" class="menuBtn tertiary" style="display: none; margin-top: 0;">💎 Spin Luck Upgrades</button>
+    </div>
   </div>
 
-  <audio id="sound" preload="auto">
-    <source src="https://dl.dropboxusercontent.com/scl/fi/f1nagx1cvim5jk5xn6fsk/WellWellWellofficial1.MP3?rlkey=s8yurbeuty44bfhmoxsmkc0ko&st=l8cjkqv2&dl=1" type="audio/mpeg">
-    Your browser does not support the audio element.
-  </audio>
+  <!-- Wheel Modal -->
+  <div id="wheelModal">
+    <div style="background: #1b1b1b; border: 2px solid #FFD700; border-radius: 14px; padding: 24px; max-width: 400px; box-shadow: 0 12px 40px rgba(0,0,0,0.8); text-align: center;">
+      <h2 style="margin-top: 0; color: #FFD700; font-size: 24px;">Daily Spin</h2>
+      <div id="wheelMessage">Get ready to spin!</div>
+      <div id="wheelDisplay" style="font-size: 20px; font-weight: 700; color: #fff; min-height: 60px; display: flex; align-items: center; justify-content: center; margin: 20px 0; text-transform: uppercase; letter-spacing: 2px;">
+        <!-- Text will cycle here -->
+      </div>
+      <div id="wheelResult"></div>
+      <button id="wheelCloseBtn">Close</button>
+    </div>
+  </div>
 
-  <script>
-    const audio = document.getElementById('sound');
-    const btn = document.getElementById('playBtn');
-    const status = document.getElementById('status');
+  <!-- Settings Modal -->
+  <div id="musicCrateModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2500; align-items: center; justify-content: center; flex-direction: column;">
+    <div style="background: #1b1b1b; border: 2px solid #4fd1ff; border-radius: 14px; padding: 24px; max-width: 460px; box-shadow: 0 12px 40px rgba(0,0,0,0.8); text-align: center;">
+      <h2 style="margin-top: 0; color: #4fd1ff; font-size: 24px;">Settings</h2>
+      <div id="musicCrateStatus" style="color: #fff; font-size: 18px; font-weight: 700; min-height: 50px; display: flex; align-items: center; justify-content: center; margin-bottom: 6px;">Choose a song.</div>
+      <div id="musicCrateDisplay" style="font-size: 20px; font-weight: 800; color: #7ce0ff; min-height: 60px; display: flex; align-items: center; justify-content: center; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px;">Hava Nagila</div>
+      <div id="musicCrateResult" style="color: #7ce0ff; font-size: 20px; font-weight: 800; min-height: 50px; margin-bottom: 16px;">Current song: <span id="currentMusicLabel">Hava Nagila</span></div>
+      <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px;">
+        <button id="equipMusicHava" class="menuBtn tertiary" style="width: 100%; background: #4a9eff; color: #fff;">Equip Hava Nagila</button>
+        <button id="equipMusicWell" class="menuBtn tertiary" style="width: 100%; background: #4a9eff; color: #fff;">Equip Well Well Well</button>
+      </div>
+      <div style="margin-bottom: 16px; text-align: left; background: rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.12); border-radius: 10px; padding: 12px;">
+        <label style="display: flex; align-items: center; justify-content: space-between; gap:12px; font-weight:700; color:#fff; margin-bottom: 12px;">
+          <span>Low Data Mode</span>
+          <input id="lowDataModeToggle" type="checkbox">
+        </label>
+        <label style="display: flex; align-items: center; justify-content: space-between; gap:12px; font-weight:700; color:#fff;">
+          <span>Include music</span>
+          <input id="includeMusicToggle" type="checkbox" checked>
+        </label>
+      </div>
+      <button id="musicCrateCloseBtn" style="background: #fff; color: #000; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 800; cursor: pointer;">Close</button>
+    </div>
+  </div>
 
-    // On iOS Safari, audio.play() must be called synchronously, directly
-    // inside a real user gesture handler (like "click") — not inside a
-    // setTimeout, and not inside a "touchstart" handler that later awaits
-    // something. A plain button click handler is the most reliable trigger.
-    btn.addEventListener('click', function () {
-      audio.play()
-        .then(function () {
-          status.textContent = 'Playing…';
-        })
-        .catch(function (err) {
-          // Show the real reason so it's easy to diagnose if it still fails
-          status.textContent = 'Could not play: ' + err.message;
+  <!-- Luck Modal -->
+  <div id="luckModal">
+    <div id="luckModalContent">
+      <h2>💎 Spin Luck Upgrades</h2>
+      <div style="text-align: left;">
+        <p style="color: #bbb; font-size: 14px; margin: 0 0 12px; text-align: center;">Luck improves wheel odds for both daily and paid spins.</p>
+        <div id="luckStatusDisplay" style="color: #fff; font-weight: 700; margin-bottom: 12px; text-align: center;">Sign in to unlock luck upgrades.</div>
+        <div id="luckUpgradeButtons">
+          <button class="luckUpgradeBtn" id="buyLuck1" style="display: none;">Buy Luck 1 (50 coins)</button>
+          <button class="luckUpgradeBtn" id="buyLuck2" style="display: none;">Buy Luck 2 (120 coins)</button>
+          <button class="luckUpgradeBtn" id="buyLuck3" style="display: none;">Buy Luck 3 (300 coins)</button>
+        </div>
+        <div class="hint">Once purchased, luck upgrades are permanent and improve your spin luck nick ga.</div>
+      </div>
+      <button id="luckCloseBtn">Close</button>
+    </div>
+  </div>
+
+  <!-- Auth Modal -->
+  <div id="authModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2000; align-items: center; justify-content: center;">
+    <div style="background: #1b1b1b; border: 1px solid #2a2a2a; border-radius: 14px; padding: 24px; width: min(400px, 90vw); box-shadow: 0 12px 40px rgba(0,0,0,0.6);">
+      <h2 style="margin-top: 0; color: #fff; font-size: 20px;">Sign In / Sign Up</h2>
+      <label style="display: block; margin-top: 16px; color: #ddd; font-weight: 700; font-size: 14px;">Username</label>
+      <input id="authUsername" type="text" placeholder="Enter username" style="width: 100%; box-sizing: border-box; padding: 10px; margin-top: 6px; border: 1px solid #2a2a2a; border-radius: 8px; background: #222; color: #fff; font-size: 14px;">
+      <label style="display: block; margin-top: 12px; color: #ddd; font-weight: 700; font-size: 14px;">Password</label>
+      <input id="authPassword" type="password" placeholder="Enter password" style="width: 100%; box-sizing: border-box; padding: 10px; margin-top: 6px; border: 1px solid #2a2a2a; border-radius: 8px; background: #222; color: #fff; font-size: 14px;">
+      <div id="authMessage" style="min-height: 20px; margin-top: 12px; color: #aaa; font-size: 12px;"></div>
+      <div style="display: flex; gap: 8px; margin-top: 16px;">
+        <button id="authSignUp" class="menuBtn primary" style="flex: 1; min-width: auto; padding: 12px;">Sign Up</button>
+        <button id="authSignIn" class="menuBtn secondary" style="flex: 1; min-width: auto; padding: 12px;">Sign In</button>
+        <button id="authClose" class="menuBtn secondary" style="flex: 1; min-width: auto; padding: 12px;">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Game -->
+  <div id="gameWrapper" aria-hidden="true">
+    <div id="gameArea" aria-label="Game area">
+      <div id="scoreboard">
+        💰 Total: <div id="totalDisplay" style="display:inline-block;">$0.00</div>
+        <div id="bestLabel">Best (local): $0.00</div>
+      </div>
+
+      <button id="pauseBtn" style="display: none; position: absolute; top: 70px; right: 190px; z-index: 700; background: #fff; color: #000; padding: 3px 10px; border-radius: 8px; font-weight: 800; border: none; cursor: pointer; box-shadow: 0 8px 24px rgba(0,0,0,0.35);">Pause</button>
+
+      <div id="breathBarContainer">
+        <div>🫁 Breath</div>
+        <div id="breathBar">
+          <div id="breathBarFill"></div>
+        </div>
+      </div>
+
+      <div id="overlay" role="dialog" aria-hidden="true"></div>
+      <div id="coinNotification" aria-hidden="true"></div>
+      <div id="player" aria-hidden="false"></div>
+      <canvas id="snakeBoard" aria-label="Eat Big Jar game board"></canvas>
+
+      <button id="backToMenu">Back to Menu</button>
+
+      <div id="controlsPanel">
+        <div id="modeSelectWrap">
+          <label for="modeSelect" style="font-weight:700;color:#333;">Control</label>
+          <select id="modeSelect">
+            <option value="desktop" selected>Computer</option>
+            <option value="mobile">Mobile</option>
+          </select>
+        </div>
+        <div id="mobileSliderWrap">
+          <span>Slide to move</span>
+          <input id="mobileSlider" type="range" min="0" max="100" value="50" />
+        </div>
+      </div>
+    </div>
+    <select id="snakeControlMode" aria-label="Snake control mode">
+      <option value="desktop">Computer</option>
+      <option value="mobile">Mobile</option>
+    </select>
+    <div id="snakeControls" aria-label="Snake movement controls">
+      <button class="snakeControl up" data-direction="up" aria-label="Move up">&#9650;</button>
+      <button class="snakeControl left" data-direction="left" aria-label="Move left">&#9664;</button>
+      <button class="snakeControl down" data-direction="down" aria-label="Move down">&#9660;</button>
+      <button class="snakeControl right" data-direction="right" aria-label="Move right">&#9654;</button>
+    </div>
+    <audio id="level5Sound" src="https://www.dropbox.com/scl/fi/jctlk81ahgqj1kjzhmudo/20240826_162113_Normal.m4a?rlkey=m4jl220rn4vllphoyqkcvcnxx&st=f6abz5at&dl=1"></audio>
+    <audio id="backgroundMusic" preload="auto" loop></audio>
+  </div>
+
+  <!-- Firebase + Firestore (modular v10 CDN) -->
+  <script type="module">
+    /* ----------------- Firebase setup with Auth ----------------- */
+    import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAnalytics }    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js";
+    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import {
+      getAuth,
+      createUserWithEmailAndPassword,
+      signInWithEmailAndPassword,
+      onAuthStateChanged,
+      signOut,
+      updateProfile
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBVGdjFlOMxUSxsL1RaLKfb1xvJAVTD8_k",
+      authDomain: "hitlar-42703.firebaseapp.com",
+      projectId: "hitlar-42703",
+      storageBucket: "hitlar-42703.firebasestorage.app",
+      messagingSenderId: "34782363612",
+      appId: "1:34782363612:web:4e1d4b4d125c8514001919",
+      measurementId: "G-JPXX3C34M9"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    /* ----------------- DOM refs ----------------- */
+    const menuEl = document.getElementById('menu');
+    const gameWrapper = document.getElementById('gameWrapper');
+    const gameArea = document.getElementById('gameArea');
+    const overlay = document.getElementById('overlay');
+    const playerEl = document.getElementById('player');
+    const totalDisplay = document.getElementById('totalDisplay');
+    const bestLabel = document.getElementById('bestLabel');
+    const backToMenuBtn = document.getElementById('backToMenu');
+    const pauseBtn = document.getElementById('pauseBtn');
+
+    const modeSelect = document.getElementById('modeSelect');
+    const mobileSliderWrap = document.getElementById('mobileSliderWrap');
+    const mobileSlider = document.getElementById('mobileSlider');
+
+    const playOriginalBtn = document.getElementById('playOriginal');
+    const playEscapeBtn = document.getElementById('playEscape');
+    const playGuiloBtn = document.getElementById('playGuilo');
+    const playSnakeBtn = document.getElementById('playSnake');
+    const globalSnakeEl = document.getElementById("globalSnake");
+    const snakeBoard = document.getElementById('snakeBoard');
+    const snakeControls = document.getElementById('snakeControls');
+    const snakeControlMode = document.getElementById('snakeControlMode');
+    const snakeContext = snakeBoard.getContext('2d');
+
+    // Global menu highscores
+    const globalOriginalEl = document.getElementById("globalOriginal");
+    const globalEscapeEl   = document.getElementById("globalEscape");
+    const globalGuiloEl    = document.getElementById("globalGuilo");
+    const dailyOriginalList = document.getElementById("dailyOriginalList");
+    const originalReviveButtonCountEl = document.getElementById("originalReviveButtonCount");
+    const escapeReviveButtonCountEl = document.getElementById("escapeReviveButtonCount");
+
+    // Auth UI
+    const authBtn = document.getElementById("authBtn");
+    const authModal = document.getElementById("authModal");
+    const authUsernameInput = document.getElementById("authUsername");
+    const coinsDisplay = document.getElementById("coinsDisplay");
+    const authPasswordInput = document.getElementById("authPassword");
+    const authSignUpBtn = document.getElementById("authSignUp");
+    const authSignInBtn = document.getElementById("authSignIn");
+    const authCloseBtn = document.getElementById("authClose");
+    const authMessage = document.getElementById("authMessage");
+    const usernameDisplay = document.getElementById("usernameDisplay");
+
+    // Wheel UI
+    const wheelButton = document.getElementById("wheelButton");
+    const musicCrateButton = document.getElementById("musicCrateButton");
+    const wheelModal = document.getElementById("wheelModal");
+    const wheelCloseBtn = document.getElementById("wheelCloseBtn");
+    const wheelMessage = document.getElementById("wheelMessage");
+    const wheelResult = document.getElementById("wheelResult");
+    const wheelDisplay = document.getElementById("wheelDisplay");
+    const musicCrateModal = document.getElementById("musicCrateModal");
+    const musicCrateCloseBtn = document.getElementById("musicCrateCloseBtn");
+    const musicCrateStatus = document.getElementById("musicCrateStatus");
+    const musicCrateDisplay = document.getElementById("musicCrateDisplay");
+    const musicCrateResult = document.getElementById("musicCrateResult");
+    const currentMusicLabel = document.getElementById("currentMusicLabel");
+    const equipMusicHavaBtn = document.getElementById("equipMusicHava");
+    const equipMusicWellBtn = document.getElementById("equipMusicWell");
+    const lowDataModeToggle = document.getElementById("lowDataModeToggle");
+    const includeMusicToggle = document.getElementById("includeMusicToggle");
+    const luckButton = document.getElementById("luckButton");
+    const luckModal = document.getElementById("luckModal");
+    const luckCloseBtn = document.getElementById("luckCloseBtn");
+    const luckStatusDisplay = document.getElementById("luckStatusDisplay");
+    const buyLuck1Btn = document.getElementById('buyLuck1');
+    const buyLuck2Btn = document.getElementById('buyLuck2');
+    const buyLuck3Btn = document.getElementById('buyLuck3');
+
+    let currentUser = null;
+    let currentUsername = null;
+    let userWheelData = null;
+    let currentCoins = 0;
+    let currentLuckLevel = 0;
+    let coinsAwardedThisRun = false;
+    const COIN_SPIN_COST = 20;
+    const MAX_LUCK_LEVEL = 3;
+    /*
+     * EDIT LUCK VALUES HERE
+     * Chances use decimals: 0.10 = 10%, 0.25 = 25%.
+     * Each entry is Luck Level 0, 1, 2, then 3.
+     */
+    const EDITABLE_LUCK_LEVELS = [
+      { cost: 0,   reviveChance: 0.08, tripleChance: 0.02 },
+      { cost: 50,  reviveChance: 0.10, tripleChance: 0.03 },
+      { cost: 120, reviveChance: 0.13, tripleChance: 0.05 },
+      { cost: 300, reviveChance: 0.38, tripleChance: 0.07 }
+    ];
+    const LUCK_COSTS = EDITABLE_LUCK_LEVELS.map(level => level.cost);
+    const LUCK_SETTINGS = EDITABLE_LUCK_LEVELS.map(level => ({
+      reviveChance: level.reviveChance,
+      tripleChance: level.tripleChance
+    }));
+
+    // Breath bar
+    const breathBarContainer = document.getElementById('breathBarContainer');
+    const breathBarFill = document.getElementById('breathBarFill');
+    const level5Sound = document.getElementById('level5Sound');
+    const backgroundMusic = document.getElementById('backgroundMusic');
+    const MUSIC_TRACKS = {
+      havanagila: 'https://dl.dropboxusercontent.com/scl/fi/xlw2o61mygmu266weyp6j/1207.MP3?rlkey=6beigh8cy7kech6ys6vokjmcj&st=a5ohqaml&dl=1',
+      wellwellwell: 'https://dl.dropboxusercontent.com/scl/fi/f1nagx1cvim5jk5xn6fsk/WellWellWellofficial1.MP3?rlkey=s8yurbeuty44bfhmoxsmkc0ko&st=l8cjkqv2&dl=1'
+    };
+    const MUSIC_TRACK_LABELS = {
+      havanagila: 'Hava Nagila',
+      wellwellwell: 'Well Well Well'
+    };
+    let selectedMusicTrack = localStorage.getItem('bigjarMusicTrack') || 'havanagila';
+    let musicCrateSpinTimer = null;
+    let lowDataMode = localStorage.getItem('bigjarLowDataMode') === 'true';
+    let includeMusicWhenLowData = localStorage.getItem('bigjarIncludeMusicLowData') !== 'false';
+
+    /* ----------------- Assets & thresholds ----------------- */
+    const IMG_DEFAULT = 'https://www.pngkey.com/png/detail/327-3272410_jews-laughing-meme-png-jews-laughing-meme-evil.png';
+    const IMG_LEVEL1 = 'https://i.ibb.co/QjbNhZMh/kirk.webp';
+    const IMG_LEVEL2 = 'https://i.ibb.co/8nB2KQ2H/IMG-6412.jpg';
+    const IMG_LEVEL3 = 'https://i.ibb.co/vCmPP120/drewmak.png';
+    const IMG_LEVEL4 = 'https://i.ibb.co/7tb6LFcx/20250910-1057582.jpg';
+    const IMG_LEVEL5 = 'https://i.ibb.co/TDj7hWFm/saultys.png';
+    const IMG_LEVEL6 = 'https://i.ibb.co/VYkHdCZL/drewmakkirked.png';
+    const IMG_GUILO_ENEMY = 'https://cdn.britannica.com/36/180236-138-43213780/Overview-concentration-camp-Auschwitz-Poland.jpg';
+    const IMG_ENEMY = 'https://c0.uidownload.com/pngpics/1125/180/adolf-hitler-silhouette-nazi-party-leader-illustration-monochrome-political-figure-black-and-white-historical-stencil-military-uniform-profile-world-war-ii-era-art-german-dictator.png';
+
+    const LEVEL1_THRESHOLD = 500;
+    const LEVEL2_THRESHOLD = 1000;
+    const LEVEL3_THRESHOLD = 5000;
+    const LEVEL4_THRESHOLD = 10000;
+    const LEVEL5_THRESHOLD = 100000;
+    const LEVEL6_THRESHOLD = 1000000;
+
+    // Mode-specific local highscores (per device)
+    const LOCAL_BEST_PREFIX = 'bigjar_best';
+
+    /* ----------------- Game state ----------------- */
+    let total = 0;
+    let best = 0;
+    let gameOver = false;
+    let currentLevel = 0;
+    let currentMode = 'original'; // 'original', 'escape', 'guilo', or 'snake'
+    let infinityCount = 0; // number of times infinity has been hit
+    let infinityOffset = 0; // exponent reached within the current infinity tier
+    let activeInfinityLabel = '';
+
+    // Power-ups
+    let activePowerUps = {
+      revives: 0
+    };
+
+    function updateReviveInventoryUI() {
+      if (!currentUser) {
+        originalReviveButtonCountEl.textContent = '';
+        escapeReviveButtonCountEl.textContent = '';
+        return;
+      }
+
+      const prizes = Array.isArray(userWheelData?.prizes) ? userWheelData.prizes : [];
+      const originalRevives = prizes.filter(prize => prize?.type === 'revive_original' && !prize.used).length;
+      const escapeRevives = prizes.filter(prize => prize?.type === 'revive_escape' && !prize.used).length;
+      originalReviveButtonCountEl.textContent = originalRevives > 0 ? originalRevives : '';
+      escapeReviveButtonCountEl.textContent = escapeRevives > 0 ? escapeRevives : '';
+    }
+
+    // Guilo-specific state
+    let breath = 100;
+    const MAX_BREATH = 100;
+    const BREATH_DECAY_RATE = 0.3; // per frame
+    const BREATH_RESTORE_PER_COIN = 8; // per coin collected
+
+    // Pause state
+    let isPaused = false;
+
+    // timers & intervals tracking for cleanup
+    let spawnTimeoutId = null;
+    const activeIntervals = new Set();
+    const activeElements = new Set();
+
+    // movement
+    let controlMode = 'desktop';
+    let targetX = 0;
+    let playerX = 0;
+
+    /* ----------------- Firestore global highscores ----------------- */
+    const cachedGlobalBest = { original: null, escape: null, guilo: null, snake: null };
+    const cachedGlobalBestCount = { original: 0, escape: 0, guilo: 0, snake: 0 };
+    const cachedGlobalBestOffset = { original: 0, escape: 0, guilo: 0, snake: 0 };
+    const pendingGlobalUpdate = { original: false, escape: false, guilo: false, snake: false };
+    const DAILY_LEADERBOARD_COLLECTION = "dailyLeaderboards";
+    const MAX_INFINITY_EXPONENT = 308;
+    let dailyScoreSubmitted = false;
+
+    function getCurrentDailyId() {
+      return new Date().toISOString().slice(0, 10);
+    }
+
+    function getInfinityOffset() {
+      if (total <= 0 || !Number.isFinite(total)) return infinityOffset;
+      const exponent = Math.floor(Math.log10(total));
+      infinityOffset = Math.max(infinityOffset, exponent >= 0 ? exponent : 0);
+      return infinityOffset;
+    }
+
+    function buildInfinityLabel(count, offset = 0) {
+      const eValue = Math.max(0, offset);
+      if (count <= 1) return `Infinity (e+${eValue})`;
+      return `Infinity ${count} (e+${eValue})`;
+    }
+
+    function formatScoreValue(score, count = 0, offset = 0) {
+      if (count > 0) {
+        return buildInfinityLabel(count, offset);
+      }
+      const numScore = Number(score);
+      if (!Number.isFinite(numScore)) {
+        return buildInfinityLabel(1, offset);
+      }
+      return `$${numScore.toFixed(2)}`;
+    }
+
+    function renderDailyLeaderboard(entries) {
+      if (!entries || entries.length === 0) {
+        dailyOriginalList.textContent = "No scores yet for today.";
+        return;
+      }
+      dailyOriginalList.innerHTML = entries.map((entry, index) => {
+        const infinityCnt = entry.infinityCount || 0;
+        const displayScore = infinityCnt > 0 ? buildInfinityLabel(infinityCnt, entry.infinityOffset || 0) : `$${Number(entry.score).toFixed(2)}`;
+        return `<div class="row"><div class="label">${index + 1}. ${entry.username ? entry.username : 'Anonymous'}</div><div class="value">${displayScore}</div></div>`;
+      }).join('');
+    }
+
+    /* --------- Auth Functions --------- */
+    function showAuthMessage(text, isError = false) {
+      authMessage.textContent = text;
+      authMessage.style.color = isError ? "#ff9999" : "#99dd99";
+    }
+
+    function openAuthModal() {
+      authModal.style.display = 'flex';
+      authUsernameInput.value = '';
+      authPasswordInput.value = '';
+      showAuthMessage('');
+      authUsernameInput.focus();
+    }
+
+    function closeAuthModal() {
+      authModal.style.display = 'none';
+    }
+
+    function updateLuckUI() {
+      if (!luckStatusDisplay || !buyLuck1Btn || !buyLuck2Btn || !buyLuck3Btn) return;
+
+      if (!currentUser) {
+        luckStatusDisplay.textContent = 'Sign in to unlock luck upgrades.';
+        buyLuck1Btn.style.display = 'none';
+        buyLuck2Btn.style.display = 'none';
+        buyLuck3Btn.style.display = 'none';
+        return;
+      }
+
+      luckStatusDisplay.textContent = `Current Luck Level: ${currentLuckLevel} — improves wheel odds.`;
+
+      buyLuck1Btn.style.display = 'block';
+      buyLuck2Btn.style.display = 'block';
+      buyLuck3Btn.style.display = 'block';
+
+      buyLuck1Btn.textContent = currentLuckLevel >= 1 ? 'Luck 1 Owned' : `Buy Luck 1 (${LUCK_COSTS[1]} coins)`;
+      buyLuck2Btn.textContent = currentLuckLevel >= 2 ? 'Luck 2 Owned' : `Buy Luck 2 (${LUCK_COSTS[2]} coins)`;
+      buyLuck3Btn.textContent = currentLuckLevel >= 3 ? 'Luck 3 Owned' : `Buy Luck 3 (${LUCK_COSTS[3]} coins)`;
+
+      buyLuck1Btn.disabled = currentLuckLevel >= 1 || currentCoins < LUCK_COSTS[1];
+      buyLuck2Btn.disabled = currentLuckLevel >= 2 || currentCoins < LUCK_COSTS[2];
+      buyLuck3Btn.disabled = currentLuckLevel >= 3 || currentCoins < LUCK_COSTS[3];
+    }
+
+    function updateAuthUI() {
+      if (currentUser && currentUsername) {
+        usernameDisplay.textContent = `${currentUsername}`;
+        authBtn.textContent = 'Sign Out';
+        wheelButton.style.display = 'block';
+        musicCrateButton.style.display = 'block';
+        luckButton.style.display = 'block';
+        updateWheelButtonState();
+        updateCoinUI();
+        updateMusicCrateButtonState();
+        authBtn.onclick = async () => {
+          try {
+            await signOut(auth);
+          } catch (error) {
+            console.error('Sign out failed:', error);
+          }
+        };
+      } else {
+        usernameDisplay.textContent = '';
+        authBtn.textContent = 'Sign In';
+        wheelButton.style.display = 'none';
+        musicCrateButton.style.display = 'none';
+        luckButton.style.display = 'none';
+        coinsDisplay.textContent = '';
+        authBtn.onclick = openAuthModal;
+        updateLuckUI();
+      }
+      updateReviveInventoryUI();
+    }
+
+    async function handleAuthSignUp() {
+      const username = authUsernameInput.value.trim();
+      const password = authPasswordInput.value;
+
+      if (!username || !password) {
+        showAuthMessage('Enter both username and password.', true);
+        return;
+      }
+
+      const email = `${username.toLowerCase()}@hitlarapp.local`;
+      try {
+        showAuthMessage('Creating account...');
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+        await updateProfile(user, { displayName: username });
+        await setDoc(doc(db, "users", user.uid), {
+          username,
+          createdAt: new Date().toISOString(),
+          coins: 0,
+          luckLevel: 0
         });
+        showAuthMessage('Account created! Signed in.');
+        setTimeout(() => closeAuthModal(), 1000);
+      } catch (error) {
+        console.error(error);
+        showAuthMessage(error.message || 'Sign up failed.', true);
+      }
+    }
+
+    async function handleAuthSignIn() {
+      const username = authUsernameInput.value.trim();
+      const password = authPasswordInput.value;
+
+      if (!username || !password) {
+        showAuthMessage('Enter both username and password.', true);
+        return;
+      }
+
+      const email = `${username.toLowerCase()}@hitlarapp.local`;
+      try {
+        showAuthMessage('Signing in...');
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+        const storedUsername = user.displayName || username;
+        showAuthMessage('Signed in!');
+        setTimeout(() => closeAuthModal(), 1000);
+      } catch (error) {
+        console.error(error);
+        showAuthMessage(error.message || 'Sign in failed.', true);
+      }
+    }
+
+    authBtn.addEventListener('click', openAuthModal);
+    authSignUpBtn.addEventListener('click', handleAuthSignUp);
+    authSignInBtn.addEventListener('click', handleAuthSignIn);
+    authCloseBtn.addEventListener('click', closeAuthModal);
+
+    authModal.addEventListener('click', (e) => {
+      if (e.target === authModal) closeAuthModal();
     });
 
-    audio.addEventListener('error', function () {
-      status.textContent = 'Audio failed to load — check the file link.';
+    authUsernameInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') authPasswordInput.focus();
     });
+
+    authPasswordInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') handleAuthSignIn();
+    });
+
+    onAuthStateChanged(auth, async (user) => {
+      currentUser = user;
+      if (user) {
+        currentUsername = user.displayName || user.email.split('@')[0];
+        await loadWheelData();
+      } else {
+        currentUsername = null;
+        userWheelData = null;
+        currentCoins = 0;
+        currentLuckLevel = 0;
+      }
+      updateAuthUI();
+    });
+
+    async function loadDailyLeaderboard() {
+      try {
+        const dailyId = getCurrentDailyId();
+        const dailySnap = await getDoc(doc(db, DAILY_LEADERBOARD_COLLECTION, dailyId));
+        const entries = dailySnap.exists() ? (dailySnap.data().original || []) : [];
+        entries.sort((a, b) => b.score - a.score);
+        renderDailyLeaderboard(entries.slice(0, 3));
+      } catch (err) {
+        console.error("Failed to load daily leaderboard:", err);
+        dailyOriginalList.textContent = "Error loading daily leaderboard";
+      }
+    }
+
+    async function submitDailyLeaderboardScore(score) {
+      if (score <= 0) return;
+      try {
+        const dailyId = getCurrentDailyId();
+        const dailyRef = doc(db, DAILY_LEADERBOARD_COLLECTION, dailyId);
+        const dailySnap = await getDoc(dailyRef);
+        const currentEntries = dailySnap.exists() ? (Array.isArray(dailySnap.data().original) ? dailySnap.data().original.slice() : []) : [];
+        
+        const scoreEntry = {
+          score: Number(score),
+          createdAt: new Date().toISOString(),
+          infinityCount: infinityCount || 0,
+          infinityOffset: getInfinityOffset()
+        };
+        if (currentUser && currentUsername) {
+          scoreEntry.username = currentUsername;
+        }
+        
+        currentEntries.push(scoreEntry);
+        currentEntries.sort((a, b) => {
+          // Sort by infinity count first, then by score
+          if ((a.infinityCount || 0) !== (b.infinityCount || 0)) {
+            return (b.infinityCount || 0) - (a.infinityCount || 0);
+          }
+          return Number(b.score) - Number(a.score);
+        });
+        if (currentEntries.length > 3) currentEntries.length = 3;
+        await setDoc(dailyRef, { original: currentEntries });
+        renderDailyLeaderboard(currentEntries);
+      } catch (err) {
+        console.error("Failed to submit daily leaderboard score:", err);
+      }
+    }
+
+    async function maybeSubmitDailyOriginalScore(score) {
+      if (currentMode !== 'original' || dailyScoreSubmitted || score <= 0) return;
+      dailyScoreSubmitted = true;
+      await submitDailyLeaderboardScore(score);
+    }
+
+
+    function getWheelSegments() {
+      const level = Math.max(0, Math.min(MAX_LUCK_LEVEL, currentLuckLevel || 0));
+      const settings = LUCK_SETTINGS[level];
+      return [
+        { label: 'Revive', chance: settings.reviveChance, type: 'revive_original' },
+        { label: '3 Revives', chance: settings.tripleChance, type: 'triple_revive' },
+        { label: 'Nothing', chance: Math.max(0, 1 - settings.reviveChance - settings.tripleChance), type: 'nothing' }
+      ];
+    }
+
+    function spinWheel() {
+      return new Promise((resolve) => {
+        const segments = getWheelSegments();
+        
+        // Weighted selection based on `chance` field
+        const totalChance = segments.reduce((s, seg) => s + (seg.chance || 0), 0);
+        let r = Math.random() * totalChance;
+        let selectedIndex = 0;
+        for (let i = 0; i < segments.length; i++) {
+          const c = segments[i].chance || 0;
+          if (r <= c) { selectedIndex = i; break; }
+          r -= c;
+        }
+        
+        // Spinning animation parameters
+        const spinDuration = 3000; // 3 seconds
+        const startTime = Date.now();
+        const spinCount = 5 + Math.random() * 5; // 5-10 full rotations worth
+        const totalSpins = spinCount * segments.length; // Total "positions" to spin through
+        const finalPosition = selectedIndex + (spinCount * segments.length);
+        
+        const animate = () => {
+          const elapsed = Date.now() - startTime;
+          const progress = Math.min(elapsed / spinDuration, 1);
+          
+          // Ease-out cubic for deceleration effect
+          const easeOutCubic = 1 - Math.pow(1 - progress, 3);
+          const currentPosition = Math.floor(finalPosition * easeOutCubic) % segments.length;
+          
+          wheelDisplay.textContent = segments[currentPosition].label;
+          
+          if (progress < 1) {
+            requestAnimationFrame(animate);
+          } else {
+            wheelDisplay.textContent = segments[selectedIndex].label;
+            resolve(selectedIndex);
+          }
+        };
+        
+        animate();
+      });
+    }
+
+    function awardPrize(prizeType) {
+      const prizeMap = {
+        'revive_original': { name: 'Revive', desc: 'Revive once in Original mode!' },
+        'triple_revive': { name: 'Triple Revive', desc: '3 revives for Escape mode!' },
+        'music_crate': { name: 'Music Crate', desc: 'Use your crate to unlock a music track!' },
+        'nothing': { name: 'Nothing', desc: 'Better luck next time, nikka!' }
+      };
+      return prizeMap[prizeType] || { name: 'Unknown', desc: '' };
+    }
+
+    function getMusicCrateCount() {
+      if (!currentUser || !userWheelData || !Array.isArray(userWheelData.prizes)) return 0;
+      return userWheelData.prizes.filter(prize => prize && prize.type === 'music_crate' && !prize.used).length;
+    }
+
+    function updateMusicCrateButtonState() {
+      if (!musicCrateButton) return;
+      musicCrateButton.style.display = 'inline-block';
+      musicCrateButton.disabled = false;
+      musicCrateButton.textContent = 'Settings';
+    }
+
+    async function loadWheelData() {
+      if (!currentUser) return null;
+      try {
+        const userRef = doc(db, "users", currentUser.uid);
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists()) {
+          userWheelData = userSnap.data().wheelData || { lastSpin: null, prizes: [] };
+          currentCoins = Number(userSnap.data().coins || 0);
+          currentLuckLevel = Math.max(0, Math.min(MAX_LUCK_LEVEL, Number(userSnap.data().luckLevel || 0)));
+        } else {
+          userWheelData = { lastSpin: null, prizes: [] };
+          currentCoins = 0;
+          currentLuckLevel = 0;
+        }
+        updateCoinUI();
+        updateLuckUI();
+        // Prune prizes older than 24 hours and remove already-used prizes from availability
+        const DAY_MS = 24 * 60 * 60 * 1000;
+        const now = Date.now();
+        const originalLen = Array.isArray(userWheelData.prizes) ? userWheelData.prizes.length : 0;
+        userWheelData.prizes = (userWheelData.prizes || []).filter(p => {
+          const awarded = p && p.awardedAt ? new Date(p.awardedAt).getTime() : 0;
+          return (!p.used) && (now - awarded <= DAY_MS);
+        });
+        if (userWheelData.prizes.length !== originalLen) {
+          // persist pruning
+          await saveWheelData(userWheelData);
+        }
+        updateReviveInventoryUI();
+        updateMusicCrateButtonState();
+        return userWheelData;
+      } catch (err) {
+        console.error("Failed to load wheel data:", err);
+        return null;
+      }
+    }
+
+    async function saveWheelData(wheelData) {
+      if (!currentUser) return;
+      try {
+        const userRef = doc(db, "users", currentUser.uid);
+        await setDoc(userRef, { wheelData }, { merge: true });
+      } catch (err) {
+        console.error("Failed to save wheel data:", err);
+      }
+    }
+
+    async function saveUserCoinBalance(coins) {
+      if (!currentUser) return;
+      try {
+        const userRef = doc(db, "users", currentUser.uid);
+        await setDoc(userRef, { coins }, { merge: true });
+      } catch (err) {
+        console.error("Failed to save coin balance:", err);
+      }
+    }
+
+    async function saveUserLuckLevel(level) {
+      if (!currentUser) return;
+      try {
+        const userRef = doc(db, "users", currentUser.uid);
+        await setDoc(userRef, { luckLevel: level }, { merge: true });
+      } catch (err) {
+        console.error("Failed to save luck level:", err);
+      }
+    }
+
+    function updateCoinUI() {
+      if (currentUser) {
+        coinsDisplay.textContent = `Coins: ${currentCoins}`;
+      } else {
+        coinsDisplay.textContent = '';
+      }
+      updateLuckUI();
+      updateMusicCrateButtonState();
+    }
+
+    let coinNotificationTimeout = null;
+
+    function showCoinNotification(text) {
+      const notification = document.getElementById('coinNotification');
+      if (!notification) return;
+      notification.textContent = text;
+      notification.style.display = 'block';
+      notification.setAttribute('aria-hidden', 'false');
+      if (coinNotificationTimeout) {
+        clearTimeout(coinNotificationTimeout);
+      }
+      coinNotificationTimeout = setTimeout(() => {
+        notification.style.display = 'none';
+        notification.setAttribute('aria-hidden', 'true');
+        coinNotificationTimeout = null;
+      }, 3000);
+    }
+
+    function getCoinRewardFromScore(score) {
+      const numericScore = Number(score);
+      if (!Number.isFinite(numericScore) || numericScore <= 0) return 0;
+      const expo = numericScore.toExponential(20);
+      const match = expo.match(/e([+-]?\d+)/i);
+      if (match) {
+        return Math.max(0, Number(match[1]));
+      }
+      return Math.max(0, Math.floor(Math.log10(Math.abs(numericScore))));
+    }
+
+    async function awardOriginalCoins(score) {
+      if (!currentUser || currentMode !== 'original' || coinsAwardedThisRun) return 0;
+      
+      let coinsEarned = 0;
+      
+      if (infinityCount > 0) {
+        coinsEarned = 308 * infinityCount + getInfinityOffset();
+      } else {
+        const numericScore = Number(score);
+        if (Number.isFinite(numericScore) && numericScore > 0) {
+          coinsEarned = Math.max(0, Math.floor(Math.log10(Math.abs(numericScore))));
+        }
+      }
+      
+      if (coinsEarned <= 0) return 0;
+      
+      currentCoins += coinsEarned;
+      coinsAwardedThisRun = true;
+      updateCoinUI();
+      await saveUserCoinBalance(currentCoins);
+      showCoinNotification(`💰 Coins earned: +${coinsEarned}`);
+      return coinsEarned;
+    }
+
+    async function handleInfinityHit() {
+      getInfinityOffset();
+      infinityOffset = MAX_INFINITY_EXPONENT;
+      infinityCount += 1;
+      infinityOffset = 0;
+      activeInfinityLabel = buildInfinityLabel(infinityCount, 0);
+      if (currentMode === 'original' && currentUser) {
+        const coinsBonus = 308;
+        currentCoins += coinsBonus;
+        updateCoinUI();
+        await saveUserCoinBalance(currentCoins);
+        showCoinNotification(`💰 Infinity bonus: +${coinsBonus} coins`);
+      }
+      total = 0.01;
+    }
+
+    // Mark a prize as used (consumed) in the stored wheel data so revives persist for 24h until used
+    async function consumePrize(type) {
+      if (!currentUser || !userWheelData || !Array.isArray(userWheelData.prizes)) return;
+      const idx = userWheelData.prizes.findIndex(p => p && p.type === type && !p.used);
+      if (idx === -1) return;
+      userWheelData.prizes[idx].used = true;
+      userWheelData.prizes[idx].usedAt = new Date().toISOString();
+      try {
+        await saveWheelData(userWheelData);
+      } catch (e) {
+        console.warn('Failed to persist prize consumption', e);
+      }
+      updateReviveInventoryUI();
+    }
+
+    function canSpinWheel() {
+      if (!userWheelData || !userWheelData.lastSpin) return true;
+      const lastSpinDate = new Date(userWheelData.lastSpin);
+      const now = new Date();
+      const diffTime = now - lastSpinDate;
+      const TEN_HOURS_MS = 10 * 60 * 60 * 1000;
+      return diffTime >= TEN_HOURS_MS; // 10 hours
+    }
+
+    async function updateWheelButtonState() {
+      if (!currentUser) {
+        wheelButton.disabled = true;
+        wheelButton.textContent = '🔒 Sign In to Spin';
+        return;
+      }
+
+      await loadWheelData();
+
+      if (canSpinWheel()) {
+        wheelButton.disabled = false;
+        wheelButton.textContent = '🎡 Spin Daily Wheel';
+      } else if (currentCoins >= COIN_SPIN_COST) {
+        wheelButton.disabled = false;
+        wheelButton.textContent = `🎡 Buy Spin for ${COIN_SPIN_COST} Coins`;
+      } else {
+        wheelButton.disabled = true;
+        const lastSpinDate = new Date(userWheelData.lastSpin);
+        const TEN_HOURS_MS = 10 * 60 * 60 * 1000;
+        const nextSpinDate = new Date(lastSpinDate.getTime() + TEN_HOURS_MS);
+        const now = new Date();
+        let diffMs = nextSpinDate - now;
+        if (diffMs < 0) diffMs = 0;
+        const seconds = Math.ceil(diffMs / 1000);
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.ceil((seconds % 3600) / 60);
+        if (hours > 0) {
+          wheelButton.textContent = `🕐 Ready in ${hours}h ${minutes}m`;
+        } else {
+          wheelButton.textContent = `🕐 Ready in ${seconds}s`;
+        }
+      }
+    }
+
+    async function handleWheelSpin() {
+      if (!currentUser) return;
+      await loadWheelData();
+      const freeSpin = canSpinWheel();
+      const canPurchase = !freeSpin && currentCoins >= COIN_SPIN_COST;
+      if (!freeSpin && !canPurchase) return;
+
+      if (!freeSpin) {
+        currentCoins -= COIN_SPIN_COST;
+        await saveUserCoinBalance(currentCoins);
+        updateCoinUI();
+      }
+
+      wheelButton.disabled = true;
+      wheelModal.style.display = 'flex';
+      wheelDisplay.textContent = '';
+      wheelMessage.textContent = freeSpin ? 'Spinning...' : 'Spinning (paid spin)...';
+      wheelResult.textContent = '';
+
+      const selectedIndex = await spinWheel();
+      const segments = getWheelSegments();
+      const selectedSegment = segments[selectedIndex];
+      const prize = awardPrize(selectedSegment.type);
+
+      // Wait 2 seconds before showing the result
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      wheelMessage.textContent = 'You won!';
+      wheelResult.textContent = `${prize.name}\n${prize.desc}`;
+
+      // Save only active revive prizes to Firestore; do not store "nothing" spins.
+      if (!userWheelData) userWheelData = { lastSpin: null, prizes: [] };
+      userWheelData.lastSpin = new Date().toISOString();
+      if (!userWheelData.prizes) userWheelData.prizes = [];
+      const awardedAt = new Date().toISOString();
+      if (selectedSegment.type === 'triple_revive') {
+        // Triple revives now grant revives usable in Escape mode
+        for (let i = 0; i < 3; i++) {
+          userWheelData.prizes.push({ type: 'revive_escape', awardedAt });
+        }
+      } else if (selectedSegment.type === 'revive_original') {
+        userWheelData.prizes.push({ type: selectedSegment.type, awardedAt });
+      } else if (selectedSegment.type === 'music_crate') {
+        userWheelData.prizes.push({ type: 'music_crate', awardedAt });
+      }
+
+      await saveWheelData(userWheelData);
+      updateReviveInventoryUI();
+      updateMusicCrateButtonState();
+      await updateWheelButtonState();
+    }
+
+    async function purchaseLuckLevel(level) {
+      if (!currentUser) return;
+      const targetLevel = Math.max(0, Math.min(MAX_LUCK_LEVEL, level));
+      if (targetLevel <= currentLuckLevel) return;
+      const cost = LUCK_COSTS[targetLevel];
+      if (currentCoins < cost) {
+        showCoinNotification(`Not enough coins for Luck ${targetLevel}`);
+        return;
+      }
+      currentCoins -= cost;
+      currentLuckLevel = targetLevel;
+      updateCoinUI();
+      updateLuckUI();
+      await saveUserCoinBalance(currentCoins);
+      await saveUserLuckLevel(currentLuckLevel);
+      showCoinNotification(`Luck upgraded to Level ${currentLuckLevel}!`);
+    }
+
+    buyLuck1Btn.addEventListener('click', () => purchaseLuckLevel(1));
+    buyLuck2Btn.addEventListener('click', () => purchaseLuckLevel(2));
+    buyLuck3Btn.addEventListener('click', () => purchaseLuckLevel(3));
+
+    function canLoadMusic() {
+      return !lowDataMode || includeMusicWhenLowData;
+    }
+
+    function updateLowDataControls() {
+      if (lowDataModeToggle) lowDataModeToggle.checked = lowDataMode;
+      if (includeMusicToggle) {
+        includeMusicToggle.checked = includeMusicWhenLowData;
+        includeMusicToggle.disabled = !lowDataMode;
+      }
+    }
+
+    function updateCurrentMusicLabel() {
+      const label = MUSIC_TRACK_LABELS[selectedMusicTrack] || 'Hava Nagila';
+      if (currentMusicLabel) currentMusicLabel.textContent = label;
+      if (musicCrateDisplay) musicCrateDisplay.textContent = label;
+    }
+
+    function setBackgroundMusic(trackKey, shouldPlay = false) {
+      if (!MUSIC_TRACKS[trackKey]) return;
+      selectedMusicTrack = trackKey;
+      localStorage.setItem('bigjarMusicTrack', trackKey);
+      if (!canLoadMusic()) {
+        backgroundMusic.pause();
+        backgroundMusic.currentTime = 0;
+        backgroundMusic.removeAttribute('src');
+        return;
+      }
+      backgroundMusic.src = MUSIC_TRACKS[trackKey];
+      backgroundMusic.load();
+      backgroundMusic.loop = true;
+      backgroundMusic.volume = 0.55;
+      backgroundMusic.muted = false;
+      updateCurrentMusicLabel();
+
+      if (shouldPlay && (currentMode === 'original' || currentMode === 'snake')) {
+        backgroundMusic.currentTime = 0;
+        backgroundMusic.play().catch(() => {
+          console.warn('Music playback is waiting for user activation on this device.');
+        });
+      } else {
+        backgroundMusic.pause();
+        backgroundMusic.currentTime = 0;
+      }
+    }
+
+    function stopBackgroundMusic() {
+      backgroundMusic.pause();
+      backgroundMusic.currentTime = 0;
+      backgroundMusic.removeAttribute('src');
+    }
+
+    function animateMusicCrateDisplay(trackKey) {
+      const options = ['Hava Nagila', 'Well Well Well'];
+      let index = 0;
+      if (musicCrateSpinTimer) clearInterval(musicCrateSpinTimer);
+      musicCrateSpinTimer = setInterval(() => {
+        if (musicCrateDisplay) {
+          musicCrateDisplay.textContent = options[index % options.length];
+          index += 1;
+        }
+      }, 120);
+
+      setTimeout(() => {
+        if (musicCrateSpinTimer) {
+          clearInterval(musicCrateSpinTimer);
+          musicCrateSpinTimer = null;
+        }
+        if (musicCrateDisplay) {
+          musicCrateDisplay.textContent = MUSIC_TRACK_LABELS[trackKey] || 'Hava Nagila';
+        }
+      }, 1600);
+    }
+
+    function equipMusicTrack(trackKey) {
+      if (!MUSIC_TRACKS[trackKey]) return;
+      selectedMusicTrack = trackKey;
+      localStorage.setItem('bigjarMusicTrack', trackKey);
+      updateCurrentMusicLabel();
+      setBackgroundMusic(trackKey, false);
+      musicCrateStatus.textContent = 'Current selection:';
+      musicCrateResult.textContent = `${MUSIC_TRACK_LABELS[trackKey] || 'Hava Nagila'}`;
+      musicCrateDisplay.textContent = MUSIC_TRACK_LABELS[trackKey] || 'Hava Nagila';
+    }
+
+    function openMusicCrateMenu() {
+      musicCrateModal.style.display = 'flex';
+      musicCrateStatus.textContent = getMusicCrateCount() > 0 ? 'Crate credit ready!' : 'Choose a song below';
+      musicCrateResult.textContent = `Current song: ${MUSIC_TRACK_LABELS[selectedMusicTrack] || 'Hava Nagila'}`;
+      musicCrateDisplay.textContent = MUSIC_TRACK_LABELS[selectedMusicTrack] || 'Hava Nagila';
+      updateLowDataControls();
+      updateCurrentMusicLabel();
+    }
+
+    async function useMusicCrate() {
+      if (!currentUser) {
+        openMusicCrateMenu();
+        return;
+      }
+
+      if (getMusicCrateCount() <= 0) {
+        openMusicCrateMenu();
+        musicCrateStatus.textContent = 'No crate credits available — choose a song below';
+        musicCrateResult.textContent = `Current song: ${MUSIC_TRACK_LABELS[selectedMusicTrack] || 'Hava Nagila'}`;
+        return;
+      }
+
+      const rolledTrack = Math.random() < 0.5 ? 'havanagila' : 'wellwellwell';
+      selectedMusicTrack = rolledTrack;
+      localStorage.setItem('bigjarMusicTrack', rolledTrack);
+
+      musicCrateModal.style.display = 'flex';
+      musicCrateStatus.textContent = 'Spinning the crate...';
+      musicCrateResult.textContent = 'Current song: ' + (MUSIC_TRACK_LABELS[selectedMusicTrack] || 'Hava Nagila');
+      animateMusicCrateDisplay(rolledTrack);
+
+      await new Promise(resolve => setTimeout(resolve, 1600));
+      musicCrateStatus.textContent = 'You rolled:';
+      musicCrateDisplay.textContent = MUSIC_TRACK_LABELS[rolledTrack] || 'Hava Nagila';
+      musicCrateResult.textContent = `Current song: ${MUSIC_TRACK_LABELS[rolledTrack] || 'Hava Nagila'}`;
+      updateCurrentMusicLabel();
+
+      if (currentMode === 'original' || currentMode === 'snake') {
+        setBackgroundMusic(rolledTrack, true);
+      } else {
+        setBackgroundMusic(rolledTrack, false);
+      }
+
+      const prizeIndex = userWheelData.prizes.findIndex(prize => prize && prize.type === 'music_crate' && !prize.used);
+      if (prizeIndex >= 0) {
+        userWheelData.prizes[prizeIndex].used = true;
+        userWheelData.prizes[prizeIndex].usedAt = new Date().toISOString();
+        await saveWheelData(userWheelData);
+      }
+      updateMusicCrateButtonState();
+    }
+
+    lowDataModeToggle.addEventListener('change', () => {
+      lowDataMode = lowDataModeToggle.checked;
+      localStorage.setItem('bigjarLowDataMode', String(lowDataMode));
+      updateLowDataControls();
+      if (!canLoadMusic()) {
+        stopBackgroundMusic();
+      } else if ((currentMode === 'original' || currentMode === 'snake') && canLoadMusic()) {
+        playSelectedMusic();
+      } else {
+        stopBackgroundMusic();
+      }
+    });
+
+    includeMusicToggle.addEventListener('change', () => {
+      includeMusicWhenLowData = includeMusicToggle.checked;
+      localStorage.setItem('bigjarIncludeMusicLowData', String(includeMusicWhenLowData));
+      if (!canLoadMusic()) {
+        stopBackgroundMusic();
+      } else if ((currentMode === 'original' || currentMode === 'snake') && canLoadMusic()) {
+        playSelectedMusic();
+      }
+    });
+
+    wheelButton.addEventListener('click', handleWheelSpin);
+    musicCrateButton.addEventListener('click', openMusicCrateMenu);
+    equipMusicHavaBtn.addEventListener('click', () => equipMusicTrack('havanagila'));
+    equipMusicWellBtn.addEventListener('click', () => equipMusicTrack('wellwellwell'));
+    wheelCloseBtn.addEventListener('click', () => {
+      wheelModal.style.display = 'none';
+    });
+    musicCrateCloseBtn.addEventListener('click', () => {
+      musicCrateModal.style.display = 'none';
+    });
+
+    wheelModal.addEventListener('click', (e) => {
+      if (e.target === wheelModal) {
+        wheelModal.style.display = 'none';
+      }
+    });
+
+    musicCrateModal.addEventListener('click', (e) => {
+      if (e.target === musicCrateModal) {
+        musicCrateModal.style.display = 'none';
+      }
+    });
+
+    luckButton.addEventListener('click', () => {
+      luckModal.style.display = 'flex';
+    });
+
+    luckCloseBtn.addEventListener('click', () => {
+      luckModal.style.display = 'none';
+    });
+
+    luckModal.addEventListener('click', (e) => {
+      if (e.target === luckModal) {
+        luckModal.style.display = 'none';
+      }
+    });
+
+    async function loadGlobalHighscores() {
+      try {
+        const originalSnap = await getDoc(doc(db, "highscores", "original"));
+        const escapeSnap   = await getDoc(doc(db, "highscores", "escape"));
+        const guiloSnap    = await getDoc(doc(db, "highscores", "guilo"));
+        const snakeSnap    = await getDoc(doc(db, "highscores", "snake"));
+
+        const originalBest = originalSnap.exists() ? Number(originalSnap.data().best) : null;
+        const escapeBest   = escapeSnap.exists() ? Number(escapeSnap.data().best)   : null;
+        const guiloBest    = guiloSnap.exists() ? Number(guiloSnap.data().best)   : null;
+        const snakeBest    = snakeSnap.exists() ? Number(snakeSnap.data().best)   : null;
+        const originalInfinityCount = originalSnap.exists() ? Number(originalSnap.data().infinityCount || 0) : 0;
+        const escapeInfinityCount = escapeSnap.exists() ? Number(escapeSnap.data().infinityCount || 0) : 0;
+        const guiloInfinityCount = guiloSnap.exists() ? Number(guiloSnap.data().infinityCount || 0) : 0;
+
+        let originalDisplay = "No score yet";
+        if (originalSnap.exists()) {
+          const username = originalSnap.data().username || "Anonymous";
+          originalDisplay = originalInfinityCount > 0
+            ? `${username}: ${buildInfinityLabel(originalInfinityCount, originalSnap.data().infinityOffset || 0)}`
+            : `${username}: $${originalBest.toFixed(2)}`;
+        }
+        let escapeDisplay = "No score yet";
+        if (escapeSnap.exists()) {
+          const username = escapeSnap.data().username || "Anonymous";
+          escapeDisplay = escapeInfinityCount > 0
+            ? `${username}: ${buildInfinityLabel(escapeInfinityCount, escapeSnap.data().infinityOffset || 0)}`
+            : `${username}: $${escapeBest.toFixed(2)}`;
+        }
+        let guiloDisplay = "No score yet";
+        if (guiloSnap.exists()) {
+          const username = guiloSnap.data().username || "Anonymous";
+          guiloDisplay = guiloInfinityCount > 0
+            ? `${username}: ${buildInfinityLabel(guiloInfinityCount, guiloSnap.data().infinityOffset || 0)}`
+            : `${username}: $${guiloBest.toFixed(2)}`;
+        }
+        const snakeDisplay = snakeSnap.exists()
+          ? `${snakeSnap.data().username || "Anonymous"}: ${Math.floor(snakeBest)}`
+          : "No score yet";
+
+        globalOriginalEl.textContent = originalDisplay;
+        globalEscapeEl.textContent   = escapeDisplay;
+        globalGuiloEl.textContent    = guiloDisplay;
+        globalSnakeEl.textContent    = snakeDisplay;
+
+        cachedGlobalBest.original = originalBest;
+        cachedGlobalBest.escape = escapeBest;
+        cachedGlobalBest.guilo = guiloBest;
+        cachedGlobalBest.snake = snakeBest;
+        cachedGlobalBestCount.original = originalInfinityCount;
+        cachedGlobalBestCount.escape = escapeInfinityCount;
+        cachedGlobalBestCount.guilo = guiloInfinityCount;
+        cachedGlobalBestOffset.original = originalSnap.exists() ? originalSnap.data().infinityOffset || 0 : 0;
+        cachedGlobalBestOffset.escape = escapeSnap.exists() ? escapeSnap.data().infinityOffset || 0 : 0;
+        cachedGlobalBestOffset.guilo = guiloSnap.exists() ? guiloSnap.data().infinityOffset || 0 : 0;
+        await loadDailyLeaderboard();
+      } catch (err) {
+        console.error("Failed to load global highscores:", err);
+        globalOriginalEl.textContent = "Error";
+        globalEscapeEl.textContent = "Error";
+        globalGuiloEl.textContent = "Error";
+        globalSnakeEl.textContent = "Error";
+        dailyOriginalList.textContent = "Error loading daily leaderboard";
+      }
+    }
+
+    async function updateGlobalHighscore(mode, score, infinityCnt = 0) {
+      try {
+        let docName = 'original';
+        if (mode === 'escape') docName = 'escape';
+        else if (mode === 'guilo') docName = 'guilo';
+        else if (mode === 'snake') docName = 'snake';
+
+        const ref = doc(db, "highscores", docName);
+        const snap = await getDoc(ref);
+        const currentBest = snap.exists() ? Number(snap.data().best) : null;
+        const currentBestInfinity = snap.exists() ? Number(snap.data().infinityCount || 0) : 0;
+
+        const scoreToSubmit = Number(score);
+        // For comparisons treat non-finite (Infinity/NaN) as extremely large,
+        // but store a finite value in Firestore. This preserves numeric ordering
+        // via `infinityCount` while keeping `best` a double.
+        const compareScore = Number.isFinite(scoreToSubmit) ? scoreToSubmit : Number.MAX_VALUE;
+        let shouldUpdate = false;
+
+        if (currentBest == null) {
+          shouldUpdate = true;
+        } else if (infinityCnt > currentBestInfinity) {
+          shouldUpdate = true;
+        } else if (infinityCnt === currentBestInfinity && compareScore > currentBest) {
+          shouldUpdate = true;
+        }
+
+        if (shouldUpdate) {
+          const username = currentUsername || "Anonymous";
+          const storedBest = Number.isFinite(scoreToSubmit) ? scoreToSubmit : 0; // keep Firestore numeric and finite
+          const offset = getInfinityOffset();
+          const scoreData = {
+            best: storedBest,
+            username,
+            infinityCount: infinityCnt || 0,
+            infinityOffset: infinityCnt > 0 ? offset : 0
+          };
+          await setDoc(ref, scoreData);
+
+          const displayText = infinityCnt > 0
+            ? `${username}: ${buildInfinityLabel(infinityCnt, offset)}`
+            : `${username}: $${storedBest.toFixed(2)}`;
+
+          if (mode === 'original') globalOriginalEl.textContent = displayText;
+          else if (mode === 'escape') globalEscapeEl.textContent = displayText;
+          else if (mode === 'guilo') globalGuiloEl.textContent = displayText;
+          else if (mode === 'snake') globalSnakeEl.textContent = displayText;
+          const key = mode === 'escape' ? 'escape' : (mode === 'guilo' ? 'guilo' : (mode === 'snake' ? 'snake' : 'original'));
+          cachedGlobalBest[key] = storedBest;
+          cachedGlobalBestCount[key] = infinityCnt || 0;
+          cachedGlobalBestOffset[key] = infinityCnt > 0 ? offset : 0;
+          return true;
+        }
+        return false;
+      } catch (err) {
+        console.error("Failed to update global highscore:", err);
+        return false;
+      }
+    }
+
+    /* ----------------- Local best per mode ----------------- */
+    function bestKeyForMode(mode) {
+      if (mode === 'escape') return `${LOCAL_BEST_PREFIX}_escape`;
+      if (mode === 'guilo') return `${LOCAL_BEST_PREFIX}_guilo`;
+      if (mode === 'snake') return `${LOCAL_BEST_PREFIX}_snake`;
+      return `${LOCAL_BEST_PREFIX}_original`;
+    }
+    function loadLocalBest(mode) {
+      const raw = localStorage.getItem(bestKeyForMode(mode));
+      const val = parseFloat(raw);
+      return Number.isFinite(val) ? val : 0;
+    }
+    function saveLocalBest(mode, value) {
+      localStorage.setItem(bestKeyForMode(mode), Number(value).toFixed(2));
+    }
+
+    /* ----------------- Helpers ----------------- */
+    function setPlayerImageForLevel(level) {
+      if (lowDataMode) {
+        playerEl.style.backgroundImage = 'none';
+        playerEl.style.backgroundColor = '#ffffff';
+        playerEl.style.border = '2px solid rgba(0,0,0,0.15)';
+        return;
+      }
+      if (level === 4) playerEl.style.backgroundImage = `url('${IMG_LEVEL4}')`;
+      else if (level === 3) playerEl.style.backgroundImage = `url('${IMG_LEVEL3}')`;
+      else if (level === 2) playerEl.style.backgroundImage = `url('${IMG_LEVEL2}')`;
+      else if (level === 1) playerEl.style.backgroundImage = `url('${IMG_LEVEL1}')`;
+      else playerEl.style.backgroundImage = `url('${IMG_DEFAULT}')`;
+      if (level === 6) playerEl.style.backgroundImage = `url('${IMG_LEVEL6}')`;
+      else if (level === 5) playerEl.style.backgroundImage = `url('${IMG_LEVEL5}')`;
+      playerEl.style.backgroundColor = '#ffd';
+      playerEl.style.border = '2px solid rgba(0,0,0,0.18)';
+    }
+
+    function effectiveForScaling() {
+      const cap = (currentMode === 'escape') ? 300 : 120;
+      return Math.min(total, cap);
+    }
+
+    function updateUI() {
+      if (infinityCount > 0) {
+        activeInfinityLabel = buildInfinityLabel(infinityCount, getInfinityOffset());
+      } else {
+        activeInfinityLabel = '';
+      }
+      const displayValue = activeInfinityLabel || `$${total.toFixed(2)}`;
+      totalDisplay.textContent = displayValue;
+      
+      if (total > best) {
+        best = parseFloat(total.toFixed(2));
+        saveLocalBest(currentMode, best);
+      }
+      const key = currentMode === 'escape' ? 'escape' : (currentMode === 'guilo' ? 'guilo' : (currentMode === 'snake' ? 'snake' : 'original'));
+      const globalBest = cachedGlobalBest[key];
+      const globalBestCount = cachedGlobalBestCount[key] || 0;
+      const globalBestDisplay = globalBest !== null ? (
+        globalBestCount > 0
+          ? buildInfinityLabel(globalBestCount, cachedGlobalBestOffset[key] || 0)
+          : `$${globalBest.toFixed(2)}`
+      ) : 'No score yet';
+      bestLabel.textContent = `Highscore: ${globalBestDisplay}`;
+      checkLevelChange();
+      try {
+        const currentBestCount = cachedGlobalBestCount[key] || 0;
+        if (!pendingGlobalUpdate[key] && (cachedGlobalBest[key] === null || infinityCount > currentBestCount || (infinityCount === currentBestCount && total > cachedGlobalBest[key]))) {
+          pendingGlobalUpdate[key] = true;
+          updateGlobalHighscore(currentMode, total, infinityCount)
+            .then((didWrite) => {
+              if (didWrite) cachedGlobalBest[key] = total;
+            })
+            .catch((e) => console.warn('In-run global update failed', e))
+            .finally(() => { pendingGlobalUpdate[key] = false; });
+        }
+      } catch (e) {
+        console.warn('Error checking in-run global beat:', e);
+      }
+    }
+
+    function updateBreathUI() {
+      const percent = Math.max(0, Math.min(100, breath)) / 100;
+      breathBarFill.style.width = (percent * 100) + '%';
+    }
+
+    function showOverlay(text, withButton = false, persistent = false) {
+      overlay.innerHTML = text + (withButton ? `<br><button id="overlayRestart">Restart</button>` : '');
+      
+      // Add revive button for Original or Escape mode if player has revives
+      if (persistent && (currentMode === 'original' || currentMode === 'escape') && activePowerUps.revives > 0 && gameOver) {
+        overlay.innerHTML += `<br><button id="overlayRevive" style="background: #4eff4a; color: #000; font-weight: 800; margin-left: 8px;">🔄 Revive (${activePowerUps.revives} left)</button>`;
+      }
+      
+      overlay.style.display = 'block';
+      overlay.setAttribute('aria-hidden', 'false');
+
+      if (withButton) {
+        setTimeout(() => {
+          const btn = document.getElementById('overlayRestart');
+          if (btn) btn.addEventListener('click', () => {
+            stopGame();
+            startGame(currentMode);
+          });
+          
+          // Add revive handler
+          const reviveBtn = document.getElementById('overlayRevive');
+          if (reviveBtn) {
+            reviveBtn.addEventListener('click', async () => {
+              activePowerUps.revives = Math.max(0, (activePowerUps.revives || 0) - 1);
+              const prizeType = currentMode === 'escape' ? 'revive_escape' : 'revive_original';
+              await consumePrize(prizeType);
+              gameOver = false;
+              overlay.style.display = 'none';
+              overlay.setAttribute('aria-hidden', 'true');
+              showOverlay(`🔄 Revived!\nRevives remaining: ${activePowerUps.revives}`);
+              spawnLoop(); // Resume spawning
+            });
+          }
+        }, 0);
+      }
+
+      if (!withButton && !persistent) {
+        setTimeout(() => {
+          if (!gameOver) {
+            overlay.style.display = 'none';
+            overlay.setAttribute('aria-hidden', 'true');
+          }
+        }, 1500);
+      }
+    }
+
+    function showLevelText(text) {
+      overlay.innerHTML = text;
+      overlay.style.display = 'block';
+      overlay.setAttribute('aria-hidden', 'false');
+      setTimeout(() => {
+        if (!gameOver) {
+          overlay.style.display = 'none';
+          overlay.setAttribute('aria-hidden', 'true');
+        }
+      }, 1600);
+    }
+
+    function checkLevelChange() {
+      const prev = currentLevel;
+      if (total > LEVEL6_THRESHOLD) currentLevel = 6;
+      else if (total > LEVEL5_THRESHOLD) currentLevel = 5;
+      else if (total > LEVEL4_THRESHOLD) currentLevel = 4;
+      else if (total > LEVEL3_THRESHOLD) currentLevel = 3;
+      else if (total > LEVEL2_THRESHOLD) currentLevel = 2;
+      else if (total > LEVEL1_THRESHOLD) currentLevel = 1;
+      else currentLevel = 0;
+
+      if (currentLevel > prev) {
+        if (currentLevel === 1) showLevelText('Level up: Drew Mak');
+        else if (currentLevel === 2) showLevelText('Level Up: Super Drew Mak');
+        else if (currentLevel === 3) showLevelText('Level Up: Ultra Drew Mak');
+        else if (currentLevel === 4) showLevelText('Level Up: Legendary Drew Mak');
+        else if (currentLevel === 5) {
+          showLevelText('Level Up: Mythic Drew Mak');
+          level5Sound.currentTime = 0;
+          level5Sound.play().catch(e => console.warn('Failed to play Level 5 sound:', e));
+        }
+        else if (currentLevel === 6) showLevelText('Level Up: Cosmic Drew Mak');
+      }
+      setPlayerImageForLevel(currentLevel);
+    }
+
+    /* ----------------- Snake mode ----------------- */
+    const SNAKE_COLUMNS = 20;
+    const SNAKE_ROWS = 30;
+    let snakeBody = [];
+    let snakeFood = { x: 10, y: 15 };
+    let snakeDirection = { x: 1, y: 0 };
+    let queuedSnakeDirection = { x: 1, y: 0 };
+    let snakePreviousBody = [];
+    let snakeRenderStart = 0;
+    let snakeAnimationFrame = null;
+    const SNAKE_TICK_MS = 120;
+    const snakeEnemyImage = new Image();
+    snakeEnemyImage.src = IMG_ENEMY;
+
+    function drawSnakeBoard(progress = 1) {
+      const cellWidth = snakeBoard.width / SNAKE_COLUMNS;
+      const cellHeight = snakeBoard.height / SNAKE_ROWS;
+      snakeContext.fillStyle = '#16251d';
+      snakeContext.fillRect(0, 0, snakeBoard.width, snakeBoard.height);
+      snakeContext.strokeStyle = 'rgba(142, 230, 163, 0.08)';
+      snakeContext.lineWidth = 1;
+      for (let column = 1; column < SNAKE_COLUMNS; column++) {
+        snakeContext.beginPath();
+        snakeContext.moveTo(column * cellWidth, 0);
+        snakeContext.lineTo(column * cellWidth, snakeBoard.height);
+        snakeContext.stroke();
+      }
+      for (let row = 1; row < SNAKE_ROWS; row++) {
+        snakeContext.beginPath();
+        snakeContext.moveTo(0, row * cellHeight);
+        snakeContext.lineTo(snakeBoard.width, row * cellHeight);
+        snakeContext.stroke();
+      }
+      if (lowDataMode) {
+        snakeContext.fillStyle = '#ffbf3f';
+        snakeContext.fillRect(snakeFood.x * cellWidth, snakeFood.y * cellHeight, cellWidth, cellHeight);
+        snakeBody.forEach((segment, index) => {
+          const previous = snakePreviousBody[index] || {
+            x: segment.x - snakeDirection.x,
+            y: segment.y - snakeDirection.y
+          };
+          const x = (previous.x + (segment.x - previous.x) * progress) * cellWidth;
+          const y = (previous.y + (segment.y - previous.y) * progress) * cellHeight;
+          snakeContext.fillStyle = index === 0 ? '#ffffff' : '#dfe8ff';
+          snakeContext.fillRect(x, y, cellWidth, cellHeight);
+        });
+        return;
+      }
+      if (snakeEnemyImage.complete && snakeEnemyImage.naturalWidth > 0) {
+        snakeContext.drawImage(snakeEnemyImage, snakeFood.x * cellWidth, snakeFood.y * cellHeight, cellWidth, cellHeight);
+      } else {
+        snakeContext.fillStyle = '#ffbf3f';
+        snakeContext.fillRect(snakeFood.x * cellWidth, snakeFood.y * cellHeight, cellWidth, cellHeight);
+      }
+      snakeBody.forEach((segment, index) => {
+        const previous = snakePreviousBody[index] || {
+          x: segment.x - snakeDirection.x,
+          y: segment.y - snakeDirection.y
+        };
+        const x = (previous.x + (segment.x - previous.x) * progress) * cellWidth;
+        const y = (previous.y + (segment.y - previous.y) * progress) * cellHeight;
+        if (index === 0) {
+          if (snakeEnemyImage.complete && snakeEnemyImage.naturalWidth > 0) {
+            snakeContext.drawImage(snakeEnemyImage, x, y, cellWidth, cellHeight);
+          } else {
+            snakeContext.fillStyle = '#fff';
+            snakeContext.fillRect(x, y, cellWidth, cellHeight);
+          }
+        } else {
+          snakeContext.fillStyle = '#fff';
+          snakeContext.fillRect(x, y, cellWidth, cellHeight);
+        }
+      });
+    }
+
+    function renderSnakeFrame(timestamp) {
+      if (currentMode !== 'snake') return;
+      const progress = Math.min(1, (timestamp - snakeRenderStart) / SNAKE_TICK_MS);
+      drawSnakeBoard(progress);
+      snakeAnimationFrame = requestAnimationFrame(renderSnakeFrame);
+    }
+
+    function placeSnakeFood() {
+      do {
+        snakeFood = {
+          x: Math.floor(Math.random() * SNAKE_COLUMNS),
+          y: Math.floor(Math.random() * SNAKE_ROWS)
+        };
+      } while (snakeBody.some(segment => segment.x === snakeFood.x && segment.y === snakeFood.y));
+    }
+
+    function setSnakeDirection(direction) {
+      const directions = {
+        up: { x: 0, y: -1 }, down: { x: 0, y: 1 },
+        left: { x: -1, y: 0 }, right: { x: 1, y: 0 }
+      };
+      const nextDirection = directions[direction];
+      if (!nextDirection || (nextDirection.x === -snakeDirection.x && nextDirection.y === -snakeDirection.y)) return;
+      queuedSnakeDirection = nextDirection;
+    }
+
+    function endSnakeGame() {
+      gameOver = true;
+      stopSpawnAndIntervals();
+      showOverlay(`Eat Big Jar over!\nScore: ${Math.floor(total)}\nBest (local): ${Math.floor(best)}`, true, true);
+      updateGlobalHighscore('snake', total).catch(error => console.warn('Snake highscore update failed:', error));
+    }
+
+    function snakeTick() {
+      if (gameOver || isPaused) return;
+      snakeDirection = queuedSnakeDirection;
+      const head = { x: snakeBody[0].x + snakeDirection.x, y: snakeBody[0].y + snakeDirection.y };
+      const hitWall = head.x < 0 || head.x >= SNAKE_COLUMNS || head.y < 0 || head.y >= SNAKE_ROWS;
+      const hitSelf = snakeBody.some(segment => segment.x === head.x && segment.y === head.y);
+      if (hitWall || hitSelf) {
+        endSnakeGame();
+        return;
+      }
+      snakePreviousBody = snakeBody.map(segment => ({ ...segment }));
+      snakeBody.unshift(head);
+      if (head.x === snakeFood.x && head.y === snakeFood.y) {
+        total += 1;
+        best = Math.max(best, total);
+        saveLocalBest('snake', best);
+        updateSnakeUI();
+        placeSnakeFood();
+      } else {
+        snakeBody.pop();
+      }
+      snakeRenderStart = performance.now();
+    }
+
+    function updateSnakeUI() {
+      totalDisplay.textContent = `Score: ${Math.floor(total)}`;
+      const globalBest = cachedGlobalBest.snake;
+      bestLabel.textContent = `Highscore: ${globalBest === null ? 'No score yet' : Math.floor(globalBest)}`;
+    }
+
+    function startSnakeGame() {
+      snakeBoard.width = gameArea.clientWidth;
+      snakeBoard.height = gameArea.clientHeight;
+      snakeBody = [{ x: 10, y: 15 }, { x: 9, y: 15 }, { x: 8, y: 15 }];
+      snakePreviousBody = snakeBody.map(segment => ({ ...segment }));
+      snakeDirection = { x: 1, y: 0 };
+      queuedSnakeDirection = { x: 1, y: 0 };
+      placeSnakeFood();
+      drawSnakeBoard();
+      snakeRenderStart = performance.now();
+      const snakeInterval = setInterval(snakeTick, SNAKE_TICK_MS);
+      activeIntervals.add(snakeInterval);
+      snakeAnimationFrame = requestAnimationFrame(renderSnakeFrame);
+      document.addEventListener('keydown', onSnakeKeyDown);
+    }
+
+    function onSnakeKeyDown(event) {
+      const keyDirections = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' };
+      const direction = keyDirections[event.key];
+      if (currentMode !== 'snake' || snakeControlMode.value !== 'desktop' || !direction) return;
+      event.preventDefault();
+      setSnakeDirection(direction);
+    }
+
+    document.querySelectorAll('.snakeControl').forEach(button => {
+      button.addEventListener('click', () => {
+        if (snakeControlMode.value === 'mobile') setSnakeDirection(button.dataset.direction);
+      });
+    });
+
+    snakeControlMode.addEventListener('change', () => {
+      snakeControlMode.blur();
+      snakeControls.querySelectorAll('.snakeControl').forEach(button => {
+        button.style.visibility = snakeControlMode.value === 'mobile' ? 'visible' : 'hidden';
+      });
+    });
+
+    /* ----------------- Movement (mouse + slider) ----------------- */
+    function initPlayerPosition() {
+      playerX = (gameArea.offsetWidth - 50) / 2;
+      targetX = playerX;
+      playerEl.style.left = playerX + 'px';
+    }
+
+    function onMouseMove(e) {
+      if (gameOver || controlMode !== 'desktop') return;
+      const rect = gameArea.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      targetX = Math.max(0, Math.min(gameArea.offsetWidth - 50, mouseX - 25));
+    }
+
+    mobileSlider.addEventListener('input', () => {
+      if (gameOver || controlMode !== 'mobile') return;
+      const percent = parseFloat(mobileSlider.value) / 100;
+      const x = percent * (gameArea.offsetWidth - 50);
+      targetX = Math.max(0, Math.min(gameArea.offsetWidth - 50, x));
+    });
+
+    function updatePlayerLoop() {
+      if (!gameOver && !isPaused) {
+        playerX += (targetX - playerX) * 0.18;
+        playerEl.style.left = playerX + 'px';
+      }
+      requestAnimationFrame(updatePlayerLoop);
+    }
+
+    /* ----------------- Spawning & falling ----------------- */
+    function getSpawnIntervalMs() {
+      const base = 700;
+      const effective = effectiveForScaling();
+      if (currentMode === 'escape') {
+        const reduction = Math.min(effective / 600, 0.6);
+        return Math.max(120, base * (1 - reduction));
+      } else if (currentMode === 'guilo') {
+        const reduction = Math.min(effective / 600, 0.5);
+        return Math.max(150, base * (1 - reduction));
+      } else {
+        const reduction = Math.min(effective / 800, 0.5);
+        return Math.max(180, base * (1 - reduction));
+      }
+    }
+
+    function getEnemyChance() {
+      if (currentMode === 'escape') {
+        let chance = 0.18 + (effectiveForScaling() / 180);
+        if (chance > 0.9) chance = 0.9;
+        return chance;
+      } else if (currentMode === 'guilo') {
+        let chance = 0.25 + (effectiveForScaling() / 250);
+        if (chance > 0.85) chance = 0.85;
+        return chance;
+      } else {
+        let chance = 0.35 + (effectiveForScaling() / 200);
+        if (chance > 0.95) chance = 0.95;
+        return chance;
+      }
+    }
+
+    function getMultiplierChance() {
+      if (currentMode === 'escape' || currentMode === 'guilo') return 0;
+      return Math.min(0.12 + (effectiveForScaling() / 240), 0.5);
+    }
+
+    function decideSpawnX(isEnemy, width = 60) {
+      if (isEnemy && Math.random() < 0.4) {
+        const jitter = (Math.random() * 60) - 30;
+        return Math.max(0, Math.min(gameArea.offsetWidth - width, playerX + jitter));
+      }
+      return Math.random() * (gameArea.offsetWidth - width);
+    }
+
+    function createScatteredCoin(topOffset = -20) {
+      const c = document.createElement('div');
+      c.className = 'coin';
+      const left = Math.random() * (gameArea.offsetWidth - 30);
+      const top = topOffset - Math.random() * 120;
+      c.style.left = `${Math.max(0, Math.min(gameArea.offsetWidth - 30, left))}px`;
+      c.style.top = `${top}px`;
+      gameArea.appendChild(c);
+      activeElements.add(c);
+      startFall(c, 'coin');
+    }
+
+    function spawnObject() {
+      if (gameOver) return;
+
+      const bigEnemyChance = 0.03 + Math.min(effectiveForScaling() / 5000, 0.07);
+      if (Math.random() < bigEnemyChance && currentMode !== 'guilo') {
+        const spawnX = decideSpawnX(true, 140);
+        const big = document.createElement('div');
+        big.className = 'bigEnemy';
+        big.style.left = spawnX + 'px';
+        big.style.top = '-160px';
+        if (lowDataMode) {
+          big.style.backgroundImage = 'none';
+          big.style.backgroundColor = '#ff7a7a';
+          big.style.border = '2px solid rgba(255,255,255,0.25)';
+        }
+        gameArea.appendChild(big);
+        activeElements.add(big);
+
+        if (currentMode === 'original') {
+          const x5 = document.createElement('div');
+          x5.className = 'x5Coin';
+          const x5Left = spawnX + (140 - 48) / 2;
+          x5.style.left = x5Left + 'px';
+          x5.style.top = '-220px';
+          gameArea.appendChild(x5);
+          activeElements.add(x5);
+          startFall(x5, 'x5');
+        }
+
+        startFall(big, 'bigEnemy');
+        return;
+      }
+
+      const enemyChance = getEnemyChance();
+      const isEnemy = Math.random() < enemyChance;
+
+      if (currentMode === 'escape') {
+        const effective = effectiveForScaling();
+        const baseExtra = 4;
+        const scaleExtra = Math.floor(effective / 60);
+        const extraCount = baseExtra + scaleExtra + Math.floor(Math.random() * 3);
+
+        for (let i = 0; i < extraCount; i++) {
+          createScatteredCoin(-10 - Math.random() * 120);
+        }
+
+        if (isEnemy) {
+          const spawnX = decideSpawnX(true, 60);
+          const el = document.createElement('div');
+          el.className = 'enemy';
+          el.style.left = spawnX + 'px';
+          el.style.top = '0px';
+          if (lowDataMode) {
+            el.style.backgroundImage = 'none';
+            el.style.backgroundColor = '#ff5d5d';
+            el.style.border = '2px solid rgba(255,255,255,0.25)';
+          }
+          gameArea.appendChild(el);
+          activeElements.add(el);
+          startFall(el, 'enemy');
+        }
+      } else if (currentMode === 'guilo') {
+        const spawnX = decideSpawnX(isEnemy, isEnemy ? 60 : 30);
+        const el = document.createElement('div');
+        el.style.left = spawnX + 'px';
+        el.style.top = '0px';
+        el.className = isEnemy ? 'enemy' : 'coin';
+        if (isEnemy) {
+          if (lowDataMode) {
+            el.style.backgroundImage = 'none';
+            el.style.backgroundColor = '#7ec8ff';
+            el.style.border = '2px solid rgba(255,255,255,0.2)';
+          } else {
+            el.style.backgroundImage = `url('${IMG_GUILO_ENEMY}')`;
+            el.style.backgroundSize = 'cover';
+            el.style.backgroundPosition = 'center';
+          }
+        }
+        gameArea.appendChild(el);
+        activeElements.add(el);
+
+        // spawn extra coins in Guilo mode
+        if (!isEnemy) {
+          const extraCount = 1 + Math.floor(Math.random() * 2);
+          const spread = 180;
+          for (let i = 0; i < extraCount; i++) {
+            const c = document.createElement('div');
+            c.className = 'coin';
+            const offset = (Math.random() * (spread * 2)) - spread;
+            const left = Math.max(0, Math.min(gameArea.offsetWidth - 30, spawnX + offset));
+            c.style.left = left + 'px';
+            c.style.top = (-30 - Math.random() * 200) + 'px';
+            const scale = 0.85 + Math.random() * 0.5;
+            c.style.width = `${30 * scale}px`;
+            c.style.height = `${30 * scale}px`;
+            c.style.borderRadius = `${50 * scale}%`;
+            gameArea.appendChild(c);
+            activeElements.add(c);
+            startFall(c, 'coin');
+          }
+        }
+
+        startFall(el, isEnemy ? 'enemy' : 'coin');
+      } else {
+        const spawnX = decideSpawnX(isEnemy, isEnemy ? 60 : 30);
+        const el = document.createElement('div');
+        el.style.left = spawnX + 'px';
+        el.style.top = '0px';
+        el.className = isEnemy ? 'enemy' : 'coin';
+        if (lowDataMode) {
+          el.style.backgroundImage = 'none';
+          el.style.backgroundColor = isEnemy ? '#ff5d5d' : '#ffd93d';
+          el.style.border = isEnemy ? '2px solid rgba(255,255,255,0.25)' : '2px solid rgba(255,255,255,0.2)';
+        }
+        gameArea.appendChild(el);
+        activeElements.add(el);
+
+        if (isEnemy && Math.random() < getMultiplierChance()) {
+          const m = document.createElement('div');
+          m.className = 'multiplierCoin';
+          m.style.left = (spawnX + 8) + 'px';
+          m.style.top = '-48px';
+          gameArea.appendChild(m);
+          activeElements.add(m);
+          startFall(m, 'multiplier');
+        }
+
+        if (!isEnemy) {
+          const extraCount = 1 + Math.floor(Math.random() * 3);
+          const spread = 200;
+          for (let i = 0; i < extraCount; i++) {
+            const c = document.createElement('div');
+            c.className = 'coin';
+            const offset = (Math.random() * (spread * 2)) - spread;
+            const left = Math.max(0, Math.min(gameArea.offsetWidth - 30, spawnX + offset));
+            c.style.left = left + 'px';
+            c.style.top = (-30 - Math.random() * 240) + 'px';
+            const scale = 0.85 + Math.random() * 0.5;
+            c.style.width = `${30 * scale}px`;
+            c.style.height = `${30 * scale}px`;
+            c.style.borderRadius = `${50 * scale}%`;
+            gameArea.appendChild(c);
+            activeElements.add(c);
+            startFall(c, 'coin');
+          }
+          if (Math.random() < 0.12) {
+            const clusterCount = 2 + Math.floor(Math.random() * 3);
+            for (let k = 0; k < clusterCount; k++) createScatteredCoin(-60 - Math.random() * 220);
+          }
+        }
+
+        startFall(el, isEnemy ? 'enemy' : 'coin');
+      }
+    }
+
+    function spawnLoop() {
+      if (gameOver || isPaused) return;
+      spawnObject();
+      spawnTimeoutId = setTimeout(spawnLoop, getSpawnIntervalMs());
+    }
+
+    function startFall(el, type = '') {
+      const tickMs = 30;
+      const intervalId = setInterval(async () => {
+        if (gameOver || isPaused) {
+          if (gameOver) {
+            if (el.parentElement) el.remove();
+            clearInterval(intervalId);
+            activeIntervals.delete(intervalId);
+            activeElements.delete(el);
+          }
+          return;
+        }
+
+        const currentTop = parseFloat(el.style.top) || 0;
+        const effective = effectiveForScaling();
+        let speed = (currentMode === 'escape') ? (3.5 + effective / 10) : (3 + effective / 12);
+        
+        // (speed boost feature removed)
+        
+        // Guilo: speed increases with money up to $200
+        if (currentMode === 'guilo') {
+          const moneySpeedBoost = Math.min(total, 200) * 0.02;
+          speed += moneySpeedBoost;
+        }
+        
+        el.style.top = (currentTop + speed) + 'px';
+
+        const elRect = el.getBoundingClientRect();
+        const playerRect = playerEl.getBoundingClientRect();
+
+        const collided =
+          elRect.bottom >= playerRect.top &&
+          elRect.top <= playerRect.bottom &&
+          elRect.left <= playerRect.right &&
+          elRect.right >= playerRect.left;
+
+        if (collided) {
+          if (type === 'coin') {
+            const value = parseFloat((Math.random() * 0.9 + 0.1).toFixed(2));
+            total = parseFloat((total + value).toFixed(2));
+            
+            // Check if we've reached infinity and track it
+            if (!Number.isFinite(total)) {
+              await handleInfinityHit();
+            }
+            
+            if (currentMode === 'guilo') {
+              breath = Math.min(MAX_BREATH, breath + BREATH_RESTORE_PER_COIN);
+            }
+            updateUI();
+            updateBreathUI();
+          } else if (type === 'multiplier') {
+            const multiplier = parseFloat((Math.random() * 0.4 + 1.1).toFixed(2));
+            total = parseFloat((total * multiplier).toFixed(2));
+            
+            if (!Number.isFinite(total)) {
+              await handleInfinityHit();
+            }
+            
+            showOverlay(`✨ Multiplied by x${multiplier.toFixed(2)}`);
+            updateUI();
+          } else if (type === 'enemy') {
+            if (currentMode === 'guilo') {
+              showOverlay(`You Got Gassed 💀\nCollected: $${total.toFixed(2)}\nBest (local): $${best.toFixed(2)}`, true, true);
+              gameOver = true;
+              stopSpawnAndIntervals();
+              try { await updateGlobalHighscore(currentMode, total, infinityCount); } catch (e) { console.warn('Global update on death failed', e); }
+            } else if (total < 4) {
+              const collectedAtDeath = total;
+              gameOver = true;
+              stopSpawnAndIntervals();
+              showOverlay(`⚠️ You Hit Lar\nCollected: $${collectedAtDeath.toFixed(2)}\nBest (local): $${best.toFixed(2)}`, true, true);
+              try {
+                if (currentMode === 'original') await awardOriginalCoins(collectedAtDeath);
+                await updateGlobalHighscore(currentMode, collectedAtDeath, infinityCount);
+                await maybeSubmitDailyOriginalScore(collectedAtDeath);
+              } catch (e) { console.warn('Global update on death (enemy) failed', e); }
+            } else {
+              // Normal enemy hit should still reduce total to 70%.
+              // A revive does not change this unless the player would otherwise die.
+              if ((currentMode === 'original' || currentMode === 'escape') && activePowerUps.revives > 0 && total < 4) {
+                const collectedAtDeath = total;
+                gameOver = true;
+                stopSpawnAndIntervals();
+                showOverlay(`⚠️ You Hit Lar\nCollected: $${collectedAtDeath.toFixed(2)}\nBest (local): $${best.toFixed(2)}`, true, true);
+              } else {
+                total = parseFloat((total * 0.7).toFixed(2));
+                showOverlay('❌ Enemy hit! Total reduced to 70%');
+                updateUI();
+              }
+            }
+          } else if (type === 'bigEnemy') {
+            const collectedAtDeath = total;
+            if ((currentMode === 'original' || currentMode === 'escape') && activePowerUps.revives > 0) {
+              gameOver = true;
+              stopSpawnAndIntervals();
+              showOverlay(`⚠️ You Hit Lar\nCollected: $${collectedAtDeath.toFixed(2)}\nBest (local): $${best.toFixed(2)}`, true, true);
+            } else {
+              total = 0;
+              updateUI();
+              gameOver = true;
+              stopSpawnAndIntervals();
+              showOverlay(`⚠️ You Hit Lar\nCollected: $${collectedAtDeath.toFixed(2)}\nBest (local): $${best.toFixed(2)}`, true, true);
+              try {
+                if (currentMode === 'original') await awardOriginalCoins(collectedAtDeath);
+                await updateGlobalHighscore(currentMode, collectedAtDeath, infinityCount);
+                await maybeSubmitDailyOriginalScore(collectedAtDeath);
+              } catch (e) { console.warn('Global update on death (bigEnemy) failed', e); }
+            }
+          } else if (type === 'x5') {
+            total = parseFloat((total * 5).toFixed(2));
+            
+            if (!Number.isFinite(total)) {
+              await handleInfinityHit();
+            }
+            
+            showOverlay('💥 x5 Collected!');
+            updateUI();
+          }
+
+          if (el.parentElement) el.remove();
+          clearInterval(intervalId);
+          activeIntervals.delete(intervalId);
+          activeElements.delete(el);
+          return;
+        }
+
+        if (currentTop > gameArea.offsetHeight + 200) {
+          if (el.parentElement) el.remove();
+          clearInterval(intervalId);
+          activeIntervals.delete(intervalId);
+          activeElements.delete(el);
+          return;
+        }
+      }, tickMs);
+
+      activeIntervals.add(intervalId);
+    }
+
+    /* ----------------- Start / Stop / Reset ----------------- */
+    function clearActiveElements() {
+      for (const el of Array.from(activeElements)) {
+        if (el.parentElement) el.remove();
+        activeElements.delete(el);
+      }
+    }
+
+    function stopSpawnAndIntervals() {
+      if (spawnTimeoutId !== null) {
+        clearTimeout(spawnTimeoutId);
+        spawnTimeoutId = null;
+      }
+      if (snakeAnimationFrame !== null) {
+        cancelAnimationFrame(snakeAnimationFrame);
+        snakeAnimationFrame = null;
+      }
+      for (const id of Array.from(activeIntervals)) {
+        clearInterval(id);
+        activeIntervals.delete(id);
+      }
+      clearActiveElements();
+    }
+
+    function stopGame() {
+      gameOver = true;
+      stopSpawnAndIntervals();
+      overlay.style.display = 'none';
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('keydown', onSnakeKeyDown);
+      gameWrapper.classList.remove('snakeMode');
+      snakeControls.style.display = 'none';
+      backgroundMusic.pause();
+      backgroundMusic.currentTime = 0;
+    }
+
+    function playSelectedMusic() {
+      if (!backgroundMusic) return;
+      const shouldPlay = currentMode === 'original' || currentMode === 'snake';
+      if (!shouldPlay) {
+        backgroundMusic.pause();
+        backgroundMusic.currentTime = 0;
+        backgroundMusic.removeAttribute('src');
+        return;
+      }
+
+      const trackKey = MUSIC_TRACKS[selectedMusicTrack] ? selectedMusicTrack : 'havanagila';
+      setBackgroundMusic(trackKey, true);
+    }
+
+    function resetGameState() {
+      stopSpawnAndIntervals();
+      total = 0;
+      breath = MAX_BREATH;
+      currentLevel = 0;
+      gameOver = false;
+      isPaused = false;
+      dailyScoreSubmitted = false;
+      coinsAwardedThisRun = false;
+      infinityCount = 0;
+      infinityOffset = 0;
+      activeInfinityLabel = '';
+      best = loadLocalBest(currentMode);
+      snakeBoard.style.display = 'none';
+      snakeContext.clearRect(0, 0, snakeBoard.width, snakeBoard.height);
+      // reset stored revives/grants
+      activePowerUps.revives = 0;
+      updateUI();
+      updateBreathUI();
+      setPlayerImageForLevel(0);
+      initPlayerPosition();
+      overlay.style.display = 'none';
+      const mk = currentMode === 'escape' ? 'escape' : (currentMode === 'guilo' ? 'guilo' : 'original');
+      pendingGlobalUpdate[mk] = false;
+      backgroundMusic.pause();
+      backgroundMusic.currentTime = 0;
+      if (currentMode !== 'original' && currentMode !== 'snake') {
+        backgroundMusic.removeAttribute('src');
+      }
+      // Ensure mobile slider is not left centered after reset
+      mobileSliderWrap.classList.remove('centered');
+    }
+
+    async function applyPowerUps() {
+      if (!currentUser || !userWheelData || !Array.isArray(userWheelData.prizes)) return;
+
+      // Count available (un-used, unexpired) revives in user's stored prizes (24h window)
+      const DAY_MS = 24 * 60 * 60 * 1000;
+      const now = Date.now();
+      let revivesToGrant = 0;
+      for (const prize of userWheelData.prizes) {
+        if (!prize || prize.used) continue;
+        const awarded = prize.awardedAt ? new Date(prize.awardedAt).getTime() : 0;
+        if (now - awarded > DAY_MS) continue; // expired
+        if (prize.type === 'revive_original' && currentMode === 'original') revivesToGrant += 1;
+        if (prize.type === 'revive_escape' && currentMode === 'escape') revivesToGrant += 1;
+      }
+
+      if (revivesToGrant > 0) {
+        activePowerUps.revives = (activePowerUps.revives || 0) + revivesToGrant;
+      }
+
+      updateUI();
+    }
+
+    function startGame(mode) {
+      currentMode = mode === 'escape' ? 'escape' : (mode === 'guilo' ? 'guilo' : (mode === 'snake' ? 'snake' : 'original'));
+      menuEl.style.display = 'none';
+      gameWrapper.style.display = 'block';
+      gameWrapper.setAttribute('aria-hidden', 'false');
+
+      resetGameState();
+      isPaused = false;
+      pauseBtn.style.display = currentMode === 'original' ? 'block' : 'none';
+      pauseBtn.textContent = 'Pause';
+
+      // Show/hide breath bar
+      if (currentMode === 'guilo') {
+        breathBarContainer.style.display = 'block';
+      } else {
+        breathBarContainer.style.display = 'none';
+      }
+
+      gameWrapper.classList.toggle('snakeMode', currentMode === 'snake');
+      snakeBoard.style.display = currentMode === 'snake' ? 'block' : 'none';
+      snakeControls.style.display = currentMode === 'snake' ? 'grid' : 'none';
+      snakeControls.querySelectorAll('.snakeControl').forEach(button => {
+        button.style.visibility = snakeControlMode.value === 'mobile' ? 'visible' : 'hidden';
+      });
+
+      // Apply power-ups for Original and Escape modes
+      if (currentMode === 'original' || currentMode === 'escape') {
+        applyPowerUps().catch(e => console.warn('Failed to apply power-ups:', e));
+      }
+
+      // Play music for Original and Eat Big Jar modes
+      if (currentMode === 'original' || currentMode === 'snake') {
+        playSelectedMusic();
+      }
+
+      if (currentMode === 'snake') {
+        startSnakeGame();
+        return;
+      }
+
+      controlMode = modeSelect.value || 'desktop';
+      if (controlMode === 'mobile') {
+        mobileSliderWrap.style.display = 'block';
+        mobileSliderWrap.classList.add('centered');
+        const percent = playerX / (gameArea.offsetWidth - 50);
+        mobileSlider.value = Math.round(percent * 100);
+      } else {
+        mobileSliderWrap.style.display = 'none';
+        mobileSliderWrap.classList.remove('centered');
+      }
+
+      document.addEventListener('mousemove', onMouseMove);
+      requestAnimationFrame(updatePlayerLoop);
+
+      // Start Guilo breath decay loop
+      if (currentMode === 'guilo') {
+        const breathDecayInterval = setInterval(() => {
+          if (gameOver) {
+            clearInterval(breathDecayInterval);
+          } else {
+            breath -= BREATH_DECAY_RATE;
+            if (breath <= 0) {
+              breath = 0;
+              showOverlay(`⚠️ Out of Breath!\nCollected: $${total.toFixed(2)}\nBest (local): $${best.toFixed(2)}`, true, true);
+              gameOver = true;
+              stopSpawnAndIntervals();
+              updateGlobalHighscore(currentMode, total, infinityCount).catch(e => console.warn('Global update on breath depletion failed', e));
+              clearInterval(breathDecayInterval);
+            }
+            updateBreathUI();
+          }
+        }, 30);
+        activeIntervals.add(breathDecayInterval);
+      }
+
+      // Play music for Original and Eat Big Jar modes only when allowed by the settings
+      if ((currentMode === 'original' || currentMode === 'snake') && canLoadMusic()) {
+        playSelectedMusic();
+      } else {
+        stopBackgroundMusic();
+      }
+      spawnLoop();
+    }
+
+    /* ----------------- UI bindings ----------------- */
+    playOriginalBtn.addEventListener('click', () => {
+      backgroundMusic.pause();
+      backgroundMusic.currentTime = 0;
+      if (canLoadMusic()) setBackgroundMusic(selectedMusicTrack, true);
+      startGame('original');
+    });
+    playEscapeBtn.addEventListener('click', () => startGame('escape'));
+    playGuiloBtn.addEventListener('click', () => startGame('guilo'));
+    playSnakeBtn.addEventListener('click', () => {
+      backgroundMusic.pause();
+      backgroundMusic.currentTime = 0;
+      if (canLoadMusic()) setBackgroundMusic(selectedMusicTrack, true);
+      startGame('snake');
+    });
+
+    backToMenuBtn.addEventListener('click', async () => {
+      try {
+        if (total > 0) {
+          if (total > best) {
+            saveLocalBest(currentMode, total);
+            best = total;
+          }
+          try {
+            if (currentMode === 'original') await awardOriginalCoins(total);
+            await updateGlobalHighscore(currentMode, total, infinityCount);
+            await maybeSubmitDailyOriginalScore(total);
+          } catch (e) { console.warn('Global update on back-to-menu failed', e); }
+        }
+      } catch (err) {
+        console.error('Error saving on back to menu:', err);
+      } finally {
+        stopGame();
+        resetGameState();
+        gameWrapper.style.display = 'none';
+        menuEl.style.display = 'block';
+        menuEl.scrollIntoView({behavior:'smooth'});
+        loadGlobalHighscores();
+      }
+    });
+
+    modeSelect.addEventListener('change', () => {
+      controlMode = modeSelect.value;
+      if (controlMode === 'mobile') {
+        mobileSliderWrap.style.display = 'block';
+        mobileSliderWrap.classList.add('centered');
+        const percent = playerX / (gameArea.offsetWidth - 50);
+        mobileSlider.value = Math.round(percent * 100);
+      } else {
+        mobileSliderWrap.style.display = 'none';
+        mobileSliderWrap.classList.remove('centered');
+      }
+    });
+
+    pauseBtn.addEventListener('click', () => {
+      if ((currentMode !== 'original' && currentMode !== 'snake') || gameOver) return;
+      isPaused = !isPaused;
+      pauseBtn.textContent = isPaused ? 'Resume' : 'Pause';
+      if (isPaused) {
+        backgroundMusic.pause();
+      } else {
+        playSelectedMusic();
+        // Resume spawning
+        if (spawnTimeoutId === null) {
+          spawnTimeoutId = setTimeout(spawnLoop, getSpawnIntervalMs());
+        } else {
+          // If timeout already exists, let the next iteration of spawnLoop start new spawn
+          spawnTimeoutId = setTimeout(spawnLoop, getSpawnIntervalMs());
+        }
+      }
+    });
+
+    /* ----------------- Init ----------------- */
+    if (!MUSIC_TRACKS[selectedMusicTrack]) {
+      selectedMusicTrack = 'havanagila';
+    }
+    stopBackgroundMusic();
+    updateLowDataControls();
+    updateCurrentMusicLabel();
+
+    setPlayerImageForLevel(0);
+    initPlayerPosition();
+    best = loadLocalBest('original');
+    updateUI();
+    requestAnimationFrame(updatePlayerLoop);
+
+    loadGlobalHighscores();
+
+    window.updateGlobalHighscore = updateGlobalHighscore;
+    window.loadGlobalHighscores = loadGlobalHighscores;
   </script>
 </body>
 </html>
+
